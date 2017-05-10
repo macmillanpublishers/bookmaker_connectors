@@ -8,13 +8,12 @@ require_relative '../bookmaker/core/metadata.rb'
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
 csdir = File.join(Bkmkr::Project.working_dir, "send_to_coresource")
-epubregexp = File.join(Bkmkr::Paths.done_dir, "*.epub")
+epubregexp = Dir.glob("#{Bkmkr::Paths.done_dir}/*.epub")
 
 # ---------------------- METHODS
 
-## wrapping a Mcmlln::Tools method in a new method for this script; to return a result for json_logfile
-def localCopyFile(source, dest, logkey='')
-  Mcmlln::Tools.copyFile(source, dest)
+def copyFiles(files, dest, logkey='')
+  FileUtils.cp_r(files, dest)
   logstring = 'copying to send_to_coresource folder'
 rescue => logstring
 ensure
