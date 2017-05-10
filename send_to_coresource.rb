@@ -8,7 +8,7 @@ require_relative '../bookmaker/core/metadata.rb'
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
 csdir = File.join(Bkmkr::Project.working_dir, "send_to_coresource")
-epubregexp = File.join(Bkmkr::Paths.done_dir, "*.epub")
+epubregexp = File.join(Bkmkr::Paths.done_dir, Metadata.pisbn, "*.epub")
 
 # ---------------------- METHODS
 
