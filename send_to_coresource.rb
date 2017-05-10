@@ -8,9 +8,18 @@ require_relative '../bookmaker/core/metadata.rb'
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
 csdir = File.join(Bkmkr::Project.working_dir, "send_to_coresource")
-epubregexp = Dir.glob("#{Bkmkr::Paths.done_dir}/*.epub")
+epubregexp = File.join(Bkmkr::Paths.done_dir, "*.epub")
 
 # ---------------------- METHODS
+
+def getFileList(regexp, logkey='')
+  filelist = Dir.glob(regexp)
+  logstring = filelist
+  return filelist
+rescue => logstring
+ensure
+    Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
+end
 
 def copyFiles(files, dest, logkey='')
   FileUtils.cp_r(files, dest)
@@ -25,7 +34,8 @@ end
 # copy all epubs from done dir
 # to coresource_send dir,
 # which then triggers the coresource_connector.rb script in /utilities
-copyFiles(epubregexp, csdir, "copyfile")
+filelist = getFileList(epubregexp)
+copyFiles(filelist, csdir, "copyfile")
 
 # Write json log:
 Mcmlln::Tools.logtoJson(@log_hash, 'completed', Time.now)
