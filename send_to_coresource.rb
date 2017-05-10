@@ -7,8 +7,6 @@ require_relative '../bookmaker/core/metadata.rb'
 
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
-csfilename = "#{Metadata.eisbn}_EPUB"
-csfilename = renameFinalEpub(csfilename, stage_dir, 'rename_final_epub_for_firstpass')
 csdir = File.join(Bkmkr::Project.working_dir, "send_to_coresource")
 epubregexp = File.join(Bkmkr::Paths.done_dir, "*.epub")
 
