@@ -34,8 +34,8 @@ end
 # copy all epubs from done dir
 # to coresource_send dir,
 # which then triggers the coresource_connector.rb script in /utilities
-filelist = getFileList(epubregexp)
-copyFiles(filelist, csdir, "copyfile")
+filelist = getFileList(epubregexp, "files_to_copy")
+copyFiles(filelist, csdir, "status")
 
 # Write json log:
 Mcmlln::Tools.logtoJson(@log_hash, 'completed', Time.now)
