@@ -13,6 +13,7 @@ epubregexp = File.join(Bkmkr::Paths.done_dir, "*.epub")
 # ---------------------- METHODS
 
 def getFileList(regexp, logkey='')
+  puts regexp
   filelist = Dir.glob(regexp)
   logstring = filelist
   return filelist
