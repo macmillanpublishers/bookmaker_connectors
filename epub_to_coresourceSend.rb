@@ -35,9 +35,9 @@ end
 
 # skip coresource upload if we are on staging server or epubcheck error-file is present
 if File.file?(testing_value_file)
-  @loghash['status'] = 'we are on staging server, skipping upload to coresource'
+  @log_hash['status'] = 'on staging server, skipping upload to coresource'
 elsif File.file?(epub_errfile)
-  @loghash['status'] = 'EPUBCHECK_ERROR.txt file found, skipping upload to coresource'
+  @log_hash['status'] = 'EPUBCHECK_ERROR.txt file found, skipping upload to coresource'
 else
   # copy all epubs from done dir
   # to coresource_send dir,
