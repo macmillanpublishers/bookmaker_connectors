@@ -10,6 +10,7 @@ local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 csdir = File.join(Bkmkr::Project.working_dir, "send_to_coresource")
 epubregexp = File.join(Bkmkr::Paths.done_dir, Metadata.pisbn, "*.epub")
 epub_errfile = File.join(Bkmkr::Paths.done_dir, Metadata.pisbn, "EPUBCHECK_ERROR.txt")
+testing_value_file = File.join(Bkmkr::Paths.resource_dir, "staging.txt")
 
 # ---------------------- METHODS
 
@@ -32,15 +33,17 @@ end
 
 # ---------------------- PROCESSES
 
-# skip coresource upload if epubcheck error-file is present
-unless File.file?(epub_errfile)
+# skip coresource upload if we are on staging server or epubcheck error-file is present
+if File.file?(testing_value_file)
+  @loghash['status'] = 'we are on staging server, skipping upload to coresource'
+elsif File.file?(epub_errfile)
+  @loghash['status'] = 'EPUBCHECK_ERROR.txt file found, skipping upload to coresource'
+else
   # copy all epubs from done dir
   # to coresource_send dir,
   # which then triggers the coresource_connector.rb script in /utilities
   filelist = getFileList(epubregexp, "files_to_copy")
   copyFiles(filelist, csdir, "status")
-else
-  @loghash['copy_to_coresource_send_dir'] = '"EPUBCHECK_ERROR.txt" file found, skipping copy to coresource_send dir'
 end
 
 # Write json log:
