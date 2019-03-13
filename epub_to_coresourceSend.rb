@@ -32,9 +32,9 @@ ensure
     Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
 
-def copyFiles(files, dest, logkey='')
+def copyFiles(files, dest, outputdir_hash[doctemplatetype], logkey='')
   FileUtils.cp_r(files, dest)
-  logstring = 'copying to send_to_coresource folder'
+  logstring = "copying to #{outputdir_hash[doctemplatetype]} folder"
 rescue => logstring
 ensure
     Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
@@ -60,7 +60,7 @@ else
   # to coresource_send dir (or other destination based on doc_template type),
   # which then triggers the coresource_connector.rb script in /utilities
   filelist = getFileList(epubregexp, "files_to_copy")
-  copyFiles(filelist, epub_outputdir, "status")
+  copyFiles(filelist, epub_outputdir, outputdir_hash[doctemplatetype], "status")
 end
 
 # Write json log:
