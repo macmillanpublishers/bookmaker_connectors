@@ -32,9 +32,9 @@ ensure
     Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
 
-def copyFiles(files, dest, outputdir_hash[doctemplatetype], logkey='')
+def copyFiles(files, dest, foldershortname, logkey='')
   FileUtils.cp_r(files, dest)
-  logstring = "copying to #{outputdir_hash[doctemplatetype]} folder"
+  logstring = "copying to #{foldershortname} folder"
 rescue => logstring
 ensure
     Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
