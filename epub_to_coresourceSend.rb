@@ -51,7 +51,7 @@ epub_outputdir = File.join(Bkmkr::Project.working_dir, outputdir_hash[doctemplat
 @log_hash['epub_outputdir'] = epub_outputdir
 
 # skip coresource upload if we are on staging server or epubcheck error-file is present
-if File.file?(testing_value_file)
+if File.file?(testing_value_file) && Val::Resources.testing == false
   @log_hash['status'] = 'on staging server, skipping upload to coresource'
 elsif File.file?(epub_errfile)
   @log_hash['status'] = 'EPUBCHECK_ERROR.txt file found, skipping upload to coresource'
