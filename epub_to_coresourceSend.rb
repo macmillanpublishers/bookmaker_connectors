@@ -50,10 +50,11 @@ epub_outputdir = File.join(Bkmkr::Project.working_dir, outputdir_hash[doctemplat
 @log_hash['doctemplatetype_found'] = doctemplatetype
 @log_hash['epub_outputdir'] = epub_outputdir
 
+# # (commenting staging check out, since we need to test this on stg for rsuite. coresource_send folder is not live on stg regardless)
 # skip coresource upload if we are on staging server or epubcheck error-file is present
-if File.file?(testing_value_file)
-  @log_hash['status'] = 'on staging server, skipping upload to coresource'
-elsif File.file?(epub_errfile)
+# if File.file?(testing_value_file)
+#   @log_hash['status'] = 'on staging server, skipping upload to coresource'
+if File.file?(epub_errfile)
   @log_hash['status'] = 'EPUBCHECK_ERROR.txt file found, skipping upload to coresource'
 else
   # copy all epubs from done dir
