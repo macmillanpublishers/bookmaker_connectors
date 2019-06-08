@@ -8,8 +8,8 @@ require_relative '../bookmaker/core/metadata.rb'
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
 outputdirs_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_connectors", "bookmakerbot_outputdirs.json")
-epubregexp = File.join(Bkmkr::Paths.done_dir, Metadata.pisbn, "*.epub")
-epub_errfile = File.join(Bkmkr::Paths.done_dir, Metadata.pisbn, "EPUBCHECK_ERROR.txt")
+epubregexp = File.join(Metadata.final_dir, "*.epub")
+epub_errfile = File.join(Metadata.final_dir, "EPUBCHECK_ERROR.txt")
 testing_value_file = File.join(Bkmkr::Paths.resource_dir, "staging.txt")
 
 # ---------------------- METHODS
