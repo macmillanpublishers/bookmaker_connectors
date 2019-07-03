@@ -23,7 +23,9 @@ if platform.system() == 'Windows':
     # this presumes that Google File Stream has been mounted to drive letter 'G'
     filestream_mydrive_location = os.path.join('G:',os.sep,'My Drive')
     staging_file = os.path.join('C:',os.sep,'staging.txt')
-    from_rsuite_tmp_dir_base = os.path.join('S:',os.sep,'rsuite_to_bookmaker-tmp')
+    # from_rsuite_tmp_dir_base = os.path.join('S:',os.sep,'rsuite_to_bookmaker-tmp')
+    from_rsuite_tmp_dir_base = os.path.join(filestream_mydrive_location,'rsuite_to_bookmaker-tmp')
+
     from_rsuite_archive_dir_base = os.path.join('S:',os.sep,'resources','file_cleanup','archived','rsuite_to_bookmaker-archive')
 ####### for testing
 else:
@@ -42,7 +44,7 @@ from_rsuite_archive_dir = os.path.join(from_rsuite_archive_dir_base, 'prod')
 
 # logging
 logdir = os.path.join(filestream_mydrive_location,'logs','bookmaker_connectors')
-logfile_basepath = os.path.join(logdir,'{}-{}'.format(script_name,time.strftime("%y%m%d-%H%M%S")))
+logfile_basepath = os.path.join(logdir,'{}-{}'.format(script_name,time.strftime("%Y-%m")))
 logfile = '{}.txt'.format(logfile_basepath)
 
 # staging specific paths
@@ -65,8 +67,8 @@ err_alert_toaddr = ['workflows@macmillan.com']
 # create log dir if it does not exist
 if not os.path.exists(logdir):
     os.makedirs(logdir)
-logging.basicConfig(filename=logfile, level=logging.DEBUG)
-logging.info("* * * * * * running '%s':  %s" %(time.strftime("%y-%m-%d_%H:%M:%S"), script_name))
+logging.basicConfig(filename=logfile, format='%(asctime)s %(message)s', level=logging.INFO)
+logging.debug("* * * * * * running '%s':  %s" %(time.strftime("%y-%m-%d_%H:%M:%S"), script_name))
 
 
 #---------------------  FUNCTIONS
@@ -75,9 +77,9 @@ def mkDir(dir):
     logging.debug(" - running 'mkDir'")
     if not os.path.isdir(dir):
         try:
-            os.makedirs(os.path.dirname(dir))
+            os.makedirs(dir)
         except Exception, e:
-            logger.error('Failed to mk new dir, exiting', exc_info=True)
+            logging.error('Failed to mk new dir "%s" exiting' % dir, exc_info=True)
             sys.exit(1)
 
 def copyFiletoFile(pathtofile, dest_file):
@@ -87,7 +89,7 @@ def copyFiletoFile(pathtofile, dest_file):
     try:
         shutil.copyfile(pathtofile, dest_file)
     except Exception, e:
-        logger.error('Failed copyfile, exiting', exc_info=True)
+        logging.error('Failed copyfile, exiting', exc_info=True)
         sys.exit(1)
 
 def testEmptyDirs(convert_dir, submitted_images_dir, interval_time, max_intervals):
@@ -103,8 +105,7 @@ def testEmptyDirs(convert_dir, submitted_images_dir, interval_time, max_interval
     if not os.listdir(convert_dir) and not os.listdir(submitted_images_dir):
         empty_bool = True
     else:
-        errstring = "Waited {} * {} seconds, submitted_images/convert_dir for bookmaker_bot-rsuite are still not clear".format(n,interval_time)
-        logging.error(errstring)
+        errstring = "Waited {} * {} seconds, submitted_images/convert_dir for bookmaker_bot-rsuite are still not clear.".format(n,interval_time)
         logging.error("files hanging around in bookmaker_rsuite-bot: 'images': %s, 'convert': %s" % (os.listdir(submitted_images_dir), os.listdir(convert_dir)))
 
     return empty_bool, errstring
@@ -155,6 +156,8 @@ def archiveTmpDir(input_tmpdir, dest_parentdir):
     except Exception, e:
         logging.error('Failed to move inputdir "{}", exiting'.format(input_dir), exc_info=True)
         sys.exit(1)
+    finally:
+        return dest_dir
 
 #---------------------  MAIN
 
@@ -166,6 +169,7 @@ if __name__ == '__main__':
     shared_utils = imp.load_source('sendmail', sharedutils_path)
 
     try:
+        logging.info("detected new folder: %s" % inputfolder)
         # move new dir from rsuite to tmp, giving unique name as we move
         input_tmpdir = mvRenameInputDir(inputfolder, from_rsuite_tmp_dir)
 
@@ -176,9 +180,12 @@ if __name__ == '__main__':
         if empty_bool == True:
             submitFilesFromRSuite(input_tmpdir, convert_dir, submitted_images_dir)
             # move dir from tmp to archive
-            archiveTmpDir(input_tmpdir, from_rsuite_archive_dir)
+            archivedir = archiveTmpDir(input_tmpdir, from_rsuite_archive_dir)
+            logging.info("submitted files from rsuite to bookmaker, archived dir from rsuite: %s" % archivedir)
         else:
+            errstring = errstring + "\n Leaving input_dir in tmpdir for manual reconciliation: {}".format(input_tmpdir)
             shared_utils.sendEmailAlert(err_alert_toaddr, script_name, errstring, logfile)
+            logging.warn(errstring)
     except Exception, e:
         errstring = 'General error during rsuite-to-bookmaker_connector for {}, sending alert'.format(inputfolder)
         logging.error(errstring, exc_info=True)
