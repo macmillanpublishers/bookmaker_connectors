@@ -17,27 +17,23 @@ if __name__ == '__main__':
 #---------------------  LOCAL DECLARATIONS
 script_name = os.path.basename(sys.argv[0]).replace(".py","_py")
 inputfolder = sys.argv[1]
+from_rsuite_dirname = os.path.basename(os.path.dirname(inputfolder)
 
 # platform dependent paths
 if platform.system() == 'Windows':
-    # this presumes that Google File Stream has been mounted to drive letter 'G'
+    # presuming Google File Stream has been mounted to drive letter 'G'
     filestream_mydrive_location = os.path.join('G:',os.sep,'My Drive')
-    staging_file = os.path.join('C:',os.sep,'staging.txt')
-    # from_rsuite_tmp_dir_base = os.path.join('S:',os.sep,'rsuite_to_bookmaker-tmp')
     from_rsuite_tmp_dir_base = os.path.join(filestream_mydrive_location,'rsuite_to_bookmaker-tmp')
-
     from_rsuite_archive_dir_base = os.path.join('S:',os.sep,'resources','file_cleanup','archived','rsuite_to_bookmaker-archive')
 ####### for testing
 else:
     import getpass
     currentuser = getpass.getuser()
     filestream_mydrive_location = os.path.join(os.sep,'Volumes','GoogleDrive','My Drive')
-    staging_file = os.path.join(os.sep,'Users',currentuser,'staging.txt')
     from_rsuite_tmp_dir_base = os.path.join(os.sep,'Users',currentuser,'testing','rsuite_to_bookmaker-tmp')
     from_rsuite_archive_dir_base = os.path.join(os.sep,'Users',currentuser,'testing','resources','file_cleanup','archived','rsuite_to_bookmaker-archive')
 
 # basepaths & prod specific paths
-from_rsuite_dir = os.path.join(filestream_mydrive_location,'rsuite_to_bookmaker')
 bookmaker_rsuite_dir = os.path.join(filestream_mydrive_location,'bookmaker_bot_RS')
 from_rsuite_tmp_dir = os.path.join(from_rsuite_tmp_dir_base, 'prod')
 from_rsuite_archive_dir = os.path.join(from_rsuite_archive_dir_base, 'prod')
@@ -48,8 +44,7 @@ logfile_basepath = os.path.join(logdir,'{}-{}'.format(script_name,time.strftime(
 logfile = '{}.txt'.format(logfile_basepath)
 
 # staging specific paths
-if staging_file:
-    from_rsuite_dir = '{}_stg'.format(from_rsuite_dir)
+if from_rsuite_dirname.rpartition('_')[2] == 'stg':
     from_rsuite_archive_dir = os.path.join(from_rsuite_archive_dir_base, 'stg')
     from_rsuite_tmp_dir = os.path.join(from_rsuite_tmp_dir_base, 'stg')
     bookmaker_rsuite_dir = '{}_stg'.format(bookmaker_rsuite_dir)
