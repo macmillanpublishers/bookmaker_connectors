@@ -1,5 +1,5 @@
 {
-  "pre-sectionstart":"send_to_rsuite",
+  "pre-sectionstart":"send_egalley_to_rsuite",
   "sectionstart":"hold_for_review",
   "rsuite":"hold_for_review"
 }
