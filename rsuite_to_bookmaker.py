@@ -17,7 +17,7 @@ if __name__ == '__main__':
 #---------------------  LOCAL DECLARATIONS
 script_name = os.path.basename(sys.argv[0]).replace(".py","_py")
 inputfolder = sys.argv[1]
-from_rsuite_dirname = os.path.basename(os.path.dirname(inputfolder)
+from_rsuite_dirname = os.path.basename(os.path.dirname(inputfolder))
 
 # platform dependent paths
 if platform.system() == 'Windows':
