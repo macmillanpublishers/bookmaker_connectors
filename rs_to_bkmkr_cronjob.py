@@ -15,8 +15,6 @@ import subprocess
 from getpass import getuser
 # from multiprocessing import Pool
 # from multiprocessing.dummy import Pool as ThreadPool
-# from functools import partial
-
 
 
 # # ---------------------  NOTES
@@ -27,18 +25,23 @@ from getpass import getuser
 # #     1) Checks for new folders that are ready (determined via presence of metadata.json),
 # #     2) writes a 'marker' file in said folder so it is not re-processed
 # #     3) verifies that space is available to download contents
-# #     4) * WAS going to download here. But now, looking at downloading directly to tmp folder via speshul .bat
-# #         pass directory id to tmparchive? No... maybe it makes most sense to handle it here? MF
-# #         because drive api is in python.
-# #         ok. Looking at doing tmpdir creation & downloads here, then pass off to .bat straightaway
+# #     4) Download files to rsuite_bookmaker tmp_drive folder/subfolders (determine project_dirname, create folders as needed)
+# #     5) upon successful download, initiate bookmaker via Popen > .bat script. Pass infile & tmpdir path as parameters
+# #     6) move downloaded folder to '_sent' folder
+# #
 # # Alerts sent for following mishaps:
 # #     a) a project folder without metadata.json and past a certain age is detected
 # #     b) a folder is ready, but is too large to be downloaded
 # #     c) a folder is taking too long to download
 # #     d) any other errors are encountered along the way
 
-# NOTES for future development: ideally we would multithread but that involves --- welll, actually ideally we would multithread!
-#  Let's try it!
+# NOTES for future development:
+#   - there is a potential failure wherein a download indefinitely hangs but does not fail for an extended period of time,
+#       or is extremly slow. In Windows task scheduler we can set the task to die after an hour or something, and that should trigger email alert
+#       alternately could spawn a process that checks this scripts' process' status after x time or something similar.
+#   - ideally we would multithread/multiprocess but that involves --- welll, actually ideally we would multithread!
+#   - optionally can send email alert to user that submission is received (can get submitter from metadata.json)
+#       may handle this in tmparchive_rsuite for now.
 
 #---------------------  LOCAL DECLARATIONS
 stale_dir_maxtime_seconds = 600
@@ -120,8 +123,16 @@ toolarge_txt  = msg_header + dedent("""
     Server destination is '{server}', permitted project_folder size: '{quota}' (KB).
     """) + msg_footer
 
+err_subject = "ALERT: rsuite > bookmaker: unexpected error ({})".format(server)
+err_txt  = msg_header + dedent("""
+    An unexpected error was encountered while running rs_to_bkmkr_cronjob.py.
+    - server/host: {server}
+    - logfile: {logfile}
+    """)
+
 
 #---------------------  FUNCTIONS
+@decorators.debug_logging
 def evalSubdirs(service, dirs_array, stale_dir_maxtime_seconds, markers):
     ready_dirs, too_old_dirs = [],[]
     try:
@@ -152,9 +163,9 @@ def evalSubdirs(service, dirs_array, stale_dir_maxtime_seconds, markers):
                     # register too-old project_dir for return
                     too_old_dirs.append(dir)
         return ready_dirs, too_old_dirs
-    except Exception:
+    except Exception as e:
         logging.error("err running with evalSubdirs:", exc_info=True)
-        return [],[]
+        raise Exception('reraise')   # re-raise to send email
 
 # from: https://stackoverflow.com/questions/51658/cross-platform-space-remaining-on-volume-using-python
 def get_free_space_kb(win_dirname, nonwin_dirname):
@@ -178,6 +189,7 @@ def calc_init_quota(perjob_maxsize_KB, min_free_disk_KB):
 
 # this is a mirror of this ruby function from bookmaker:
 #   https://github.com/macmillanpublishers/bookmaker/blob/master/core/header.rb#L85-L104
+@decorators.debug_logging
 def setTmpDirName(bkmkr_tmp_dir, docx_name):
     project_tmp_dir_base = os.path.join(bkmkr_tmp_dir, docx_name)
     tmp_suffix_re = re.compile(".*_\d+$")
@@ -194,6 +206,7 @@ def setTmpDirName(bkmkr_tmp_dir, docx_name):
         project_tmp_dir = "{}{}".format(project_tmp_dir_base,count)
     return project_tmp_dir
 
+@decorators.debug_logging
 def setupDirs(bkmkr_tmp_dir, docx_name):
     try:
         # set tmpdir name, create tmpdir & subdir(s)
@@ -204,25 +217,27 @@ def setupDirs(bkmkr_tmp_dir, docx_name):
         shared_utils.mkDir(bkmkr_tmp_dir)
         shared_utils.mkDir(project_tmpdir)
         shared_utils.mkDir(nondocx_tmpdir)
+        return project_tmpdir, nondocx_tmpdir
     except Exception:
         logging.error("err running with setupDirs:", exc_info=True)
-        return '',''
-    return project_tmpdir, nondocx_tmpdir
+        raise Exception('reraise')   # re-raise to send email
 
+@decorators.debug_logging
 def downloadFiles(service, docx_object, project_tmpdir, nondocx_objects, nondocx_tmpdir):
-    dl_success = False
-    try:
-        # download files!
-        status = drive_api.downloadFile(service, docx_object['id'], os.path.join(project_tmpdir, docx_object['name']))
-        for file in nondocx_objects:
-            status = drive_api.downloadFile(service, file['id'], os.path.join(nondocx_tmpdir, file['name']))
-        dl_success = True
-        return dl_success
-    except Exception:
-        logging.error("err running with processReadyDir:", exc_info=True)
-        return False
+    dl_errors = []
+    # download files!   # the details should be logged through debug.log decorator in referenced api functions.
+    status = drive_api.downloadFile(service, docx_object['id'], os.path.join(project_tmpdir, docx_object['name']))
+    if status != "Download 100%":
+        dl_errors.append(docx_object['name'])
+    for file in nondocx_objects:
+        status = drive_api.downloadFile(service, file['id'], os.path.join(nondocx_tmpdir, file['name']))
+        if status != "Download 100%":
+            dl_errors.append(file['name'])
+    return dl_errors
 
-def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir, service, bkmkr_tmp_dir, bkmkr_tmp_dir, bkmkr_cmd,
+@decorators.debug_logging
+def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir, service, bkmkr_tmp_dir, bkmkr_tmp_dir, bkmkr_cmd..
+    logging.info("processing ready_dir: %s" % ready_dir['name'])
     # get the manuscript filename & id
     nondocx_objects = []
     for file in ready_dir['files']:
@@ -233,44 +248,49 @@ def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir,
     # set tmpdirs, download items
     if docx_object:
         project_tmpdir, nondocx_tmpdir = setupDirs(bkmkr_tmp_dir, docx_object['name'])
-        dl_success = downloadFiles(service, docx_object, project_tmpdir, nondocx_objects, nondocx_tmpdir)
-        if dl_success == True:
-            # kick off bookmaker!
-            # ** NOTE:
-            #   we may need to change the working_dir in the header for this project. Can detect input_dir for project_name...
-            #   orrrr pass 2 parameters .. one for convert-file & one with tmpdir name. Testing the latter
+        dl_errors = downloadFiles(service, docx_object, project_tmpdir, nondocx_objects, nondocx_tmpdir)
+        if not dl_errors:
+            # set bkmkr parameters, kick off bookmaker!
             docx_tmpdir_path = os.path.join(project_tmpdir)#, docx_object['name'])
             docx_convert_path = os.path.join(bkmkr_dir, "convert", docx_object['name'])
-            popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, docx_tmpdir_path]
-            p = subprocess.Popen(popen_params)
-            print "PID %s" % p.pid
+            try:
+                popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, docx_tmpdir_path]
+                logging.debug("popen params to launch bkmkr: \n'%s'" % popen_params)
+                p = subprocess.Popen(popen_params)
+                logging.info("bookmaker initiated for file '%s', pid %s" % (docx_object['name'], p.pid))
+            except Exception:
+                logging.error("error invoking bkmkr_cmd: '%s'" % bkmkr_cmd, exc_info=True)
+                raise Exception('reraise')   # re-raise to send email
+        else:
+            errmsg = 'download(s) unsuccessful for files in "%s": "%s"' % (ready_dir['name'], dl_errors)
+            raise Exception(errmsg)
+    else:
+        errmsg = '.docx not found in readydir! : "%s"' % ready_dir['name']
+        raise Exception(errmsg)
 
 
 
 #---------------------  MAIN
-service = drive_api.getDriveServiceOauth2()
+try:
+    service = drive_api.getDriveServiceOauth2()
 
-if service is not None:
     # get rsuite_to_bookmaker dir id
-    logging.info("getting maindir")
     maindir_id = drive_api.findDirByName(service, api_xfer_dir, 'root')
     archivedir_id = drive_api.findDirByName(service, '{}_sent'.format(api_xfer_dir), 'root')
 
     # get all dirs in rsuite_to_bookmaker
-    logging.info("getting dirs_array")
     dirs_array = drive_api.returnAllSubdirs(service, maindir_id)
 
     # evaluate dirs, write markers & return any that are ready, or too old
     ready_dirs, too_old_dirs = evalSubdirs(service, dirs_array, stale_dir_maxtime_seconds, markers)
-    logging.info("ready_dirs: %s" % len(ready_dirs))
-    logging.info("too_old_dirs: %s" % len(too_old_dirs))
 
     # send alert for too_old_dirs
     for old_dir in too_old_dirs:
+        logging.info("sending alert mail for too_old_dir: %s" % old_dir['name'])
         stalejob_body = stalejob_txt.format(elapsed=stale_dir_maxtime_seconds, parent_folder=api_xfer_dir, \
-        name=dir['name'], size=dir['dir_kb'], date=dir['createdTime'])
+        name=old_dir['name'], size=old_dir['dir_kb'], date=old_dir['createdTime'])
         sendmail.sendMail(alert_emails_to, stalejob_subject, stalejob_body)
-        logging.info("sent mail for too old")
+
 
     # check sizes, divert to alert if too large
     if ready_dirs:
@@ -278,39 +298,33 @@ if service is not None:
         logging.info("init quota: %s" % size_quota)
         for ready_dir in ready_dirs:
             # send alert for any too_large_dir
-            print ready_dir
             if ready_dir['dir_kb'] > size_quota:
+                logging.info("sending alert mail for toolarge_dir: %s" % ready_dir['name'])
                 toolarge_body = stalejob_txt.format(server=server, quota=size_quota, \
-                name=dir['name'], size=dir['dir_kb'], date=dir['createdTime'])
+                name=ready_dir['name'], size=ready_dir['dir_kb'], date=ready_dir['createdTime'])
                 sendmail.sendMail(alert_emails_to, toolarge_subject, toolarge_body)
                 # remove this dir from the array
                 ready_dirs.remove(ready_dir)
-                logging.info("sending toolarge alert: \n%s" % toolarge_body)
                 continue
             else:
                 # resize the quota dir by dir in case it is a close thing
                 size_quota -= ready_dir['dir_kb']
-                logging.info("revized quota: %s" % size_quota)
+                logging.info("revised quota: %s" % size_quota)
 
     # process ready dirs
-    # NOTE: I should be passing moe parameters maybe, based on scoping do not need to? Since this is a standalone right
-    #   now and likelihood of re-use is moderate.
+    # NOTE: Maybe should be passing mote parameters, based on scoping in script, and since this is a standalone right now, and ..
+    #   .. likelihood of one-off function re-use is low. Also just having 1 param lends itself to simple map funciton later, for multithread, eg:
+    #      'results = pool.map(my_function, my_array)' '
     if ready_dirs:
         for ready_dir in ready_dirs:
-            logging.info("looks like we're downloading!")
             processReadyDir(ready_dir)
             # archive drive folder
             drive_api.moveObject(service, ready_dir['id'], maindir_id, archivedir_id)
 
-else:
-    print "ERRRORRR with drive API"
-
-# PLAN FOR OUTAGE - preserve files (done already. Add retry decorator?)
-
-# error fielding
-# LOGGING
-# tracking time on downloads?
-# # download! multithtred! keep an eye on time
-# pool = ThreadPool(4)
-# results = pool.map(my_function, my_array
-# def multiThreadDlReadyDirs(ready_dir):
+except Exception as e:
+    if e[0] == 'reraise':
+        logging.warning("sending alert_mail for trapped/re-raised err")
+    else:
+        logging.error("sending alert_mail for untrapped top-level err", exc_info=True)
+    err_body = err_txt.format(server=server, logfile=logfile)
+    sendmail.sendMail(alert_emails_to, err_subject, err_body)
