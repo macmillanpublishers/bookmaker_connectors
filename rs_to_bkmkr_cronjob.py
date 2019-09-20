@@ -204,11 +204,11 @@ def setTmpDirName(bkmkr_tmp_dir, docx_name):
     else:
         projtmpdir_root = "{}_".format(project_tmp_dir_base)
     count = 1
-    project_tmp_dir = "{}{}".format(project_tmp_dir_base,count)
+    project_tmp_dir = "{}{}".format(projtmpdir_root,count)
     # increment until we find an unused path/dir
     while os.path.exists(project_tmp_dir):
         count +=1
-        project_tmp_dir = "{}{}".format(project_tmp_dir_base,count)
+        project_tmp_dir = "{}{}".format(projtmpdir_root,count)
     return project_tmp_dir
 
 @decorators.debug_logging
