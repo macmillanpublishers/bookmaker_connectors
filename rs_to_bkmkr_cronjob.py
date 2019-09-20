@@ -48,7 +48,7 @@ stale_dir_maxtime_seconds = 600
 download_maxtime_seconds = 300
 perjob_maxsize_KB = 2000000
 min_free_disk_KB = 2000000
-alert_emails_to = 'workflows@macmillan.com'
+alert_emails_to = ['workflows@macmillan.com']
 api_xfer_dir = 'rsuite_to_bookmaker'
 markers = {
     'rs_ready': 'bookmakerMetadata.json',
