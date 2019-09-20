@@ -60,27 +60,32 @@ currentuser = getuser()
 staging_filename = 'staging.txt'
 staging_file = os.path.join("C:", os.sep, staging_filename)
 rs_to_bkmkr_name = 'rs_to_bkmkr'
-bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker", rs_to_bkmkr_name)
+bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", rs_to_bkmkr_name)
 bkmkr_tmp_dir = os.path.join("S:", os.sep, "bookmaker_tmp", rs_to_bkmkr_name)
 bkmkr_cmd = os.path.join("S:", os.sep, "resources", "bookmaker_scripts", "bookmaker_deploy", "{}.bat".format(rs_to_bkmkr_name))
 logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
-if os.path.exists(staging_file):
-    api_xfer_dir = '{}_stg'.format(api_xfer_dir)
-    bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker", "{}_stg".format(rs_to_bkmkr_name))
-    logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
+# if os.path.exists(staging_file):
+#     api_xfer_dir = '{}_stg'.format(api_xfer_dir)
+#     bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "{}_stg".format(rs_to_bkmkr_name))
+#     logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
 
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
     staging_file = os.path.join(os.sep,"Users", currentuser, staging_filename)
-    bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker", rs_to_bkmkr_name)
+    bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", rs_to_bkmkr_name)
     bkmkr_tmp_dir = os.path.join(os.sep, 'Users', currentuser, 'bookmaker-dev', 'bookmaker_tmp', rs_to_bkmkr_name)
     bkmkr_cmd = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev', 'bookmaker_deploy', "{}.sh".format(rs_to_bkmkr_name))
     logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
-    if os.path.exists(staging_file):
-        api_xfer_dir = '{}_stg'.format(api_xfer_dir)
-        bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker", "{}_stg".format(rs_to_bkmkr_name))
-        logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
+    # if os.path.exists(staging_file):
+    #     api_xfer_dir = '{}_stg'.format(api_xfer_dir)
+    #     bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "{}_stg".format(rs_to_bkmkr_name))
+    #     logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
+if os.path.exists(staging_file):
+    api_xfer_dir = '{}_stg'.format(api_xfer_dir)
+    bkmkr_dir = '{}_stg'.format(bkmkr_dir)
+    logdir = '{}_stg'.format(logdir)
 
+bkmkr_toolchain_dir = os.path.join(bkmkr_dir, 'bookmaker_galley')
 
 #---------------------  IMPORT other custom python utils for functions below
 # shared_utils & decorators are relative imports in googledrive_api.py. to get it to resolve from this script importing it here too.
@@ -252,7 +257,7 @@ def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir,
         if not dl_errors:
             # set bkmkr parameters, kick off bookmaker!
             docx_tmpdir_path = os.path.join(project_tmpdir)#, docx_object['name'])
-            docx_convert_path = os.path.join(bkmkr_dir, "convert", docx_object['name'])
+            docx_convert_path = os.path.join(bkmkr_toolchain_dir, "convert", docx_object['name'])
             try:
                 popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, docx_tmpdir_path]
                 logging.debug("popen params to launch bkmkr: \n'%s'" % popen_params)
