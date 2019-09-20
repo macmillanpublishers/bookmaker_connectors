@@ -63,11 +63,11 @@ rs_to_bkmkr_name = 'rs_to_bkmkr'
 bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker", rs_to_bkmkr_name)
 bkmkr_tmp_dir = os.path.join("S:", os.sep, "bookmaker_tmp", rs_to_bkmkr_name)
 bkmkr_cmd = os.path.join("S:", os.sep, "resources", "bookmaker_scripts", "bookmaker_deploy", "{}.bat".format(rs_to_bkmkr_name))
-logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_connectors", "bookmaker_logs", rs_to_bkmkr_name)
+logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
 if os.path.exists(staging_file):
     api_xfer_dir = '{}_stg'.format(api_xfer_dir)
     bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker", "{}_stg".format(rs_to_bkmkr_name))
-    logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_connectors", "bookmaker_logs", "{}_stg".format(rs_to_bkmkr_name))
+    logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
 
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
@@ -75,11 +75,11 @@ if platform.system() != 'Windows':  # for testing:
     bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker", rs_to_bkmkr_name)
     bkmkr_tmp_dir = os.path.join(os.sep, 'Users', currentuser, 'bookmaker-dev', 'bookmaker_tmp', rs_to_bkmkr_name)
     bkmkr_cmd = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev', 'bookmaker_deploy', "{}.sh".format(rs_to_bkmkr_name))
-    logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_connectors", "bookmaker_logs", rs_to_bkmkr_name)
+    logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
     if os.path.exists(staging_file):
         api_xfer_dir = '{}_stg'.format(api_xfer_dir)
         bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker", "{}_stg".format(rs_to_bkmkr_name))
-        logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_connectors", "bookmaker_logs", "{}_stg".format(rs_to_bkmkr_name))
+        logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
 
 
 #---------------------  IMPORT other custom python utils for functions below
