@@ -60,32 +60,28 @@ currentuser = getuser()
 staging_filename = 'staging.txt'
 staging_file = os.path.join("C:", os.sep, staging_filename)
 rs_to_bkmkr_name = 'rs_to_bkmkr'
-bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", rs_to_bkmkr_name)
-bkmkr_tmp_dir = os.path.join("S:", os.sep, "bookmaker_tmp", rs_to_bkmkr_name)
-bkmkr_cmd = os.path.join("S:", os.sep, "resources", "bookmaker_scripts", "bookmaker_deploy", "{}.bat".format(rs_to_bkmkr_name))
-logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
-# if os.path.exists(staging_file):
-#     api_xfer_dir = '{}_stg'.format(api_xfer_dir)
-#     bkmkr_dir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "{}_stg".format(rs_to_bkmkr_name))
-#     logdir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
+bkmkr_toolchain_name = 'bookmaker_galley'
+dropfolder_maindir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)")
+bkmkr_scripts_dir = os.path.join("S:", os.sep, "resources", "bookmaker_scripts")
+bkmkr_tmp_dir = os.path.join("S:", os.sep, "bookmaker_tmp", bkmkr_toolchain_name)
 
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
     staging_file = os.path.join(os.sep,"Users", currentuser, staging_filename)
-    bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", rs_to_bkmkr_name)
-    bkmkr_tmp_dir = os.path.join(os.sep, 'Users', currentuser, 'bookmaker-dev', 'bookmaker_tmp', rs_to_bkmkr_name)
-    bkmkr_cmd = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev', 'bookmaker_deploy', "{}.sh".format(rs_to_bkmkr_name))
-    logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
-    # if os.path.exists(staging_file):
-    #     api_xfer_dir = '{}_stg'.format(api_xfer_dir)
-    #     bkmkr_dir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "{}_stg".format(rs_to_bkmkr_name))
-    #     logdir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)", "bookmaker_logs", "bookmaker_connectors", "{}_stg".format(rs_to_bkmkr_name))
+    dropfolder_maindir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)")
+    bkmkr_scripts_dir = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev')
+    bkmkr_tmp_dir = os.path.join(os.sep, 'Users', currentuser, 'bookmaker-dev', 'bookmaker_tmp', bkmkr_toolchain_name)
+
+bkmkr_dir = os.path.join(dropfolder_maindir, rs_to_bkmkr_name)
+bkmkr_cmd = os.path.join(bkmkr_scripts_dir, "bookmaker_deploy", "{}.bat".format(rs_to_bkmkr_name))
+logdir = os.path.join(dropfolder_maindir, "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
+
 if os.path.exists(staging_file):
     api_xfer_dir = '{}_stg'.format(api_xfer_dir)
     bkmkr_dir = '{}_stg'.format(bkmkr_dir)
     logdir = '{}_stg'.format(logdir)
 
-bkmkr_toolchain_dir = os.path.join(bkmkr_dir, 'bookmaker_galley')
+bkmkr_toolchain_dir = os.path.join(bkmkr_dir, bkmkr_toolchain_name)
 
 #---------------------  IMPORT other custom python utils for functions below
 # shared_utils & decorators are relative imports in googledrive_api.py. to get it to resolve from this script importing it here too.
