@@ -227,7 +227,7 @@ def setupDirs(bkmkr_tmp_dir, docx_name):
 def downloadFiles(service, docx_object, project_tmpdir, nondocx_objects, nondocx_tmpdir):
     dl_errors = []
     # download files!   # the details should be logged through debug.log decorator in referenced api functions.
-    status = drive_api.downloadFile(service, docx_object['id'], os.path.join(project_tmpdir, docx_object['name']))
+    status = drive_api.downloadFile(service, docx_object['id'], os.path.join(project_tmpdir, docx_object['name'].replace(' ','')))
     if status != "Download 100%":
         dl_errors.append(docx_object['name'])
     for file in nondocx_objects:
