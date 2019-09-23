@@ -192,7 +192,7 @@ def calc_init_quota(perjob_maxsize_KB, min_free_disk_KB):
 #   https://github.com/macmillanpublishers/bookmaker/blob/master/core/header.rb#L85-L104
 @decorators.debug_logging
 def setTmpDirName(bkmkr_tmp_dir, docx_name):
-    project_tmp_dir_base = os.path.join(bkmkr_tmp_dir, docx_name)
+    project_tmp_dir_base = os.path.join(bkmkr_tmp_dir, docx_name.replace(' ',''))   # < remove whitespace from docxname
     tmp_suffix_re = re.compile(".*_\d+$")
     if tmp_suffix_re.match(project_tmp_dir_base):
         # adding a hyphen as pre-suffix to filenames that happen to end in our std naming: '_\d'
