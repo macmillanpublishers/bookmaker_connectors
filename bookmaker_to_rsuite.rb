@@ -15,7 +15,7 @@ api_credentials_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys",
 rsuite_server_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "rsuite_servers.json")
 zip_wrapper_py = File.join(scripts_dir, "bookmaker_connectors", "zip_wrapper.py")
 api_POST_to_RS_py = File.join(scripts_dir, "bookmaker_connectors", "api_POST_to_RS.py")
-sendfiles_regexp = File.join(final_dir, "*{_ERROR.txt,_POD.pdf,.docx,.epub}")
+sendfiles_regexp = File.join(final_dir, "*{_ERROR.txt,_POD.pdf,.epub}")
 
 
 # ---------------------- METHODS
