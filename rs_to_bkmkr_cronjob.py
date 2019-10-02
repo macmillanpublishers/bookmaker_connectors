@@ -20,14 +20,17 @@ from getpass import getuser
 # # ---------------------  NOTES
 # # This script is intended to be run as a cronjob,
 # #     to regularly check for new project folders passed from RSuite to bookmaker via GoogleDrive,
-# #     & download them for processing
+# #     & download them for processing.
+# # A script parameter will be written to json indicating what drive folders we are checking and what server we should return
+# #     bookmaker output to. it should read 'rs_dev', 'rs_stg' or 'rs_prod'
 # # Basic outline:
 # #     1) Checks for new folders that are ready (determined via presence of metadata.json),
 # #     2) writes a 'marker' file in said folder so it is not re-processed
 # #     3) verifies that space is available to download contents
 # #     4) Download files to rsuite_bookmaker tmp_drive folder/subfolders (determine project_dirname, create folders as needed)
-# #     5) upon successful download, initiate bookmaker via Popen > .bat script. Pass infile & tmpdir path as parameters
-# #     6) move downloaded folder to '_sent' folder
+# #     5) upon successful download:
+# #         a) initiate bookmaker via Popen > .bat script. Pass infile, server_param & tmpdir path as parameters
+# #         b) move downloaded folder to '_sent' folder
 # #
 # # Alerts sent for following mishaps:
 # #     a) a project folder without metadata.json and past a certain age is detected
@@ -37,11 +40,17 @@ from getpass import getuser
 
 # NOTES for future development:
 #   - there is a potential failure wherein a download indefinitely hangs but does not fail for an extended period of time,
-#       or is extremly slow. In Windows task scheduler we can set the task to die after an hour or something, and that should trigger email alert
-#       alternately could spawn a process that checks this scripts' process' status after x time or something similar.
-#   - ideally we would multithread/multiprocess but that involves --- welll, actually ideally we would multithread!
+#       or is extremly slow. In Windows task scheduler we can set this task to die after an hour or something, and that should trigger email alert.
+#       Alternately could spawn a process that checks this scripts' process' status after x time or something similar.
+#   - ideally we would multithread/multiprocess but that involves --- welll, actually ideally we would multithread. Postponing, but created ticket
 #   - optionally can send email alert to user that submission is received (can get submitter from metadata.json)
-#       may handle this in tmparchive_rsuite for now.
+#       may skip or handle this in tmparchive_rsuite for now.
+
+#---------------------  INPUT PARAMETERS
+servername_param = sys.argv[1]
+if not servername_param:
+    servername_param = 'rs_dev'
+server_shortname = servername_param.split('_')[1]
 
 #---------------------  LOCAL DECLARATIONS
 stale_dir_maxtime_seconds = 600
@@ -49,7 +58,7 @@ download_maxtime_seconds = 300
 perjob_maxsize_KB = 2000000
 min_free_disk_KB = 2000000
 alert_emails_to = ['workflows@macmillan.com']
-api_xfer_dir = 'rsuite_to_bookmaker'
+api_xfer_dir = 'rsuite_to_bookmaker_{}'.format(server_shortname)
 markers = {
     'rs_ready': 'bookmakerMetadata.json',
     'bkmkr_processing': 'bkmkr_begun_processing_this_folder',
@@ -77,7 +86,6 @@ bkmkr_cmd = os.path.join(bkmkr_scripts_dir, "bookmaker_deploy", "{}.bat".format(
 logdir = os.path.join(dropfolder_maindir, "bookmaker_logs", "bookmaker_connectors", rs_to_bkmkr_name)
 
 if os.path.exists(staging_file):
-    api_xfer_dir = '{}_stg'.format(api_xfer_dir)
     bkmkr_dir = '{}_stg'.format(bkmkr_dir)
     logdir = '{}_stg'.format(logdir)
 
@@ -255,7 +263,7 @@ def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir,
             docx_tmpdir_path = os.path.join(project_tmpdir)#, docx_object['name'])
             docx_convert_path = os.path.join(bkmkr_toolchain_dir, "convert", docx_object['name'])
             try:
-                popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, docx_tmpdir_path]
+                popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, docx_tmpdir_path, servername_param]
                 logging.debug("popen params to launch bkmkr: \n'%s'" % popen_params)
                 p = subprocess.Popen(popen_params)
                 logging.info("bookmaker initiated for file '%s', pid %s" % (docx_object['name'], p.pid))
