@@ -47,7 +47,7 @@ from getpass import getuser
 #       may skip or handle this in tmparchive_rsuite for now.
 
 #---------------------  INPUT PARAMETERS
-if sys.argv[1]:
+if len(sys.argv) > 1:
     servername_param = sys.argv[1]
 else:
     servername_param = 'rs_dev'
