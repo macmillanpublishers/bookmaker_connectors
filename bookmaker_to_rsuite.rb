@@ -59,8 +59,8 @@ end
 
 def zipFiles(zip_wrapper_py, target_dir, zipfile_fullpath, files_to_send_list, logkey='')
   zip_test = 'n-a'
-  files_to_send_str = files_to_send_list.join(' ')
-  arg_string = "#{target_dir} #{zipfile_fullpath} #{files_to_send_str}"
+  files_to_send_str = files_to_send_list.join('" "')
+  arg_string = "\"#{target_dir}\" \"#{zipfile_fullpath}\" \"#{files_to_send_str}\""
   # zip_result = `python #{zip_wrapper_py} #{arg_string}`.strip()   # <-- for local test / debug
   zip_result = Bkmkr::Tools.runpython(zip_wrapper_py, arg_string).strip()
   if zip_result == 'zipped'
@@ -75,14 +75,14 @@ ensure
 end
 
 def postZipToRSuite(py_script, url, zipfile_fullpath, logkey='')
-  arg_string = "#{zipfile_fullpath} #{url}"
+  arg_string = "\"#{zipfile_fullpath}\" \"#{url}\""
   # results = `python #{py_script} #{arg_string}`   # <-- for local test / debug
   results = Bkmkr::Tools.runpython(py_script, arg_string).strip()
   result_code, result_msg = results.split('_', 2)
   return result_code, result_msg
 rescue => logstring
 ensure
-    # Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
+    Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
 
 
@@ -124,7 +124,7 @@ if api_GET_result == 200 && sessionkey
     if result_code == '200'
       logstring = "success: #{result_msg}"
     else
-      logstring = "ERROR: #{result_msg}"
+      logstring = "ERROR, code: #{result_code}, msg: #{result_msg}"
     end
   else
     logstring = "ERROR: Bookmaker zipfile for upload-to-rsuite not found: \"#{zipfile_fullpath}\""
