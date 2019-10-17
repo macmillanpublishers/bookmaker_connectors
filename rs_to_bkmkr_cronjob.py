@@ -298,7 +298,7 @@ try:
     for old_dir in too_old_dirs:
         logging.info("sending alert mail for too_old_dir: %s" % old_dir['name'])
         stalejob_body = stalejob_txt.format(elapsed=stale_dir_maxtime_seconds, parent_folder=api_xfer_dir, \
-        name=old_dir['name'], size=old_dir['dir_kb'], date=old_dir['createdTime'])
+        name=old_dir['name'], size=old_dir['dir_kb'], created=old_dir['createdTime'])
         sendmail.sendMail(alert_emails_to, stalejob_subject, stalejob_body)
 
 
@@ -310,8 +310,8 @@ try:
             # send alert for any too_large_dir
             if ready_dir['dir_kb'] > size_quota:
                 logging.info("sending alert mail for toolarge_dir: %s" % ready_dir['name'])
-                toolarge_body = stalejob_txt.format(server=server, quota=size_quota, \
-                name=ready_dir['name'], size=ready_dir['dir_kb'], date=ready_dir['createdTime'])
+                toolarge_body = toolarge_txt.format(server=server, quota=size_quota, parent_folder=api_xfer_dir,\
+                name=ready_dir['name'], size=ready_dir['dir_kb'], created=ready_dir['createdTime'])
                 sendmail.sendMail(alert_emails_to, toolarge_subject, toolarge_body)
                 # remove this dir from the array
                 ready_dirs.remove(ready_dir)
