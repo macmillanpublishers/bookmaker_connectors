@@ -71,14 +71,16 @@ staging_filename = 'staging.txt'
 staging_file = os.path.join("C:", os.sep, staging_filename)
 rs_to_bkmkr_name = 'rs_to_bkmkr'
 bkmkr_toolchain_name = 'bookmaker_galley'
-dropfolder_maindir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)")
+# dropfolder_maindir = os.path.join("C:", os.sep, "Users", "padwoadmin", "Dropbox (Macmillan Publishers)")  #<< dropbox
+dropfolder_maindir = os.path.join("G:", os.sep, "Shared drives", "US Workflow Tools")    #<< drive
 bkmkr_scripts_dir = os.path.join("S:", os.sep, "resources", "bookmaker_scripts")
 bkmkr_tmp_dir = os.path.join("S:", os.sep, "bookmaker_tmp", bkmkr_toolchain_name)
 
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
     staging_file = os.path.join(os.sep,"Users", currentuser, staging_filename)
-    dropfolder_maindir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)")
+    # dropfolder_maindir = os.path.join(os.sep, "Users", currentuser, "Dropbox (Macmillan Publishers)")     #<< dropbox
+    dropfolder_maindir = os.path.join(os.sep, "Volumes", "GoogleDrive", "Shared drives", "US Workflow Tools")     #<< drive
     bkmkr_scripts_dir = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev')
     bkmkr_tmp_dir = os.path.join(os.sep, 'Users', currentuser, 'bookmaker-dev', 'bookmaker_tmp', bkmkr_toolchain_name)
 
