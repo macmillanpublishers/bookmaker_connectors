@@ -11,7 +11,6 @@ local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
 final_dir = Metadata.final_dir
 scripts_dir = Bkmkr::Paths.scripts_dir
-api_credentials_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "rs-bookmaker_api_credentials.json")
 rsuite_server_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "rsuite_servers.json")
 zip_wrapper_py = File.join(scripts_dir, "bookmaker_connectors", "zip_wrapper.py")
 api_POST_to_RS_py = File.join(scripts_dir, "bookmaker_connectors", "api_POST_to_RS.py")
@@ -90,11 +89,13 @@ end
 
 # local definitions from json files
 rsuite_metadata_hash = readJson(Bkmkr::Paths.fromrsuite_Metadata_json, 'read_rsuite_metadata_json')
-api_credentials_hash = readJson(api_credentials_json, 'read_api_credentials_json')
 rs_server_hash = readJson(rsuite_server_json, 'read_rs_server_json')
 rsuite_isbn = rsuite_metadata_hash['edition_eanisbn13']
 rs_server = rsuite_metadata_hash['rsuite_server']
-serveraddress = rs_server_hash[rs_server]
+serveraddress = rs_server_hash[rs_server]['fqdn']
+api_uname = rs_server_hash[rs_server]['api_uname']
+api_pword = rs_server_hash[rs_server]['api_pword']
+
 # log key values
 @log_hash['rsuite_isbn'] = rsuite_isbn
 @log_hash['serveraddress'] = serveraddress
@@ -103,7 +104,7 @@ serveraddress = rs_server_hash[rs_server]
 files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
 
 # prepare GET & capture rsuite session key
-auth = {username: api_credentials_hash['api_uname'], password: api_credentials_hash['api_pword']}
+auth = {username: api_uname, password: api_pword}
 url_GET = "http://#{serveraddress}/rsuite/rest/v2/user/session"
 api_GET_result, sessionkey = getRsuiteSession(url_GET, auth, 'api_GET_rsuite_sessionkey')
 
@@ -130,7 +131,7 @@ if api_GET_result == 200 && sessionkey
     logstring = "ERROR: Bookmaker zipfile for upload-to-rsuite not found: \"#{zipfile_fullpath}\""
   end
 else
-  logstring = "ERROR: Could not get RS sessionkey for user \"#{api_credentials_hash['api_uname']}\", upload to RSuite failed"
+  logstring = "ERROR: Could not get RS sessionkey for user \"#{api_uname}\", upload to RSuite failed"
 end
 puts "api_POST_result: ", logstring  #< debug
 @log_hash['api_POST_result'] = logstring
