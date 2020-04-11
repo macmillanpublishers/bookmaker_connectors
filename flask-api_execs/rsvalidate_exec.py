@@ -37,6 +37,7 @@ alert_emails_to = ['workflows@macmillan.com']
 staging_filename = 'staging.txt'
 staging_file = os.path.join("C:", os.sep, staging_filename)
 dropfolder_maindir = os.path.join("G:", os.sep, "My Drive", "Workflow Tools")    #<< drive
+bkmkr_scripts_dir = os.path.join("S:", os.sep, 'resources', 'bookmaker_scripts')
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
     pypath = os.path.join(os.sep, 'usr', 'bin', 'python') # <- python 2.7 (system)
