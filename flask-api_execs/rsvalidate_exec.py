@@ -28,7 +28,7 @@ jobId = os.path.basename(parentdir)
 file_ext = os.path.splitext(inputfile)[1]
 
 # Other key definitions
-pypath = 'python'
+pypath = pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
 this_script = os.path.basename(sys.argv[0])
 runtype_string = 'direct'
 server = gethostname()
