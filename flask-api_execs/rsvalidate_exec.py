@@ -11,7 +11,7 @@ rsvalidate_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "sectionstart_conver
 # # # RUN
 if __name__ == '__main__':
     try:
-        # unzip file if it was a zip, into the parentdir
+        # unzip file if it was a zip, right into the parentdir
         shared_cfg.unzipZips(shared_cfg.inputfile, shared_cfg.err_dict)
         # we're only looking for docx that were zipped solo here; so just checking for docx in
         #   parentdir (where zips where extracted to) should be fine (no need to recurse)
