@@ -28,7 +28,8 @@ jobId = os.path.basename(parentdir)
 file_ext = os.path.splitext(inputfile)[1]
 
 # Other key definitions
-pypath = pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
+pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
+rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
 this_script = os.path.basename(sys.argv[0])
 runtype_string = 'direct'
 server = gethostname()
@@ -41,6 +42,7 @@ bkmkr_scripts_dir = os.path.join("S:", os.sep, 'resources', 'bookmaker_scripts')
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
     pypath = os.path.join(os.sep, 'usr', 'bin', 'python') # <- python 2.7 (system)
+    rubypath = 'ruby'
     staging_file = os.path.join(os.sep,"Users", currentuser, staging_filename)
     dropfolder_maindir = os.path.join(os.sep, "Volumes", "GoogleDrive", "My Drive", "Workflow Tools")     #<< drive
     bkmkr_scripts_dir = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev')
