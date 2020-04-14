@@ -110,10 +110,10 @@ def invokeSubprocess(popen_params, product_name, err_dict):
     try:
         logging.debug("popen params for 'invokeSubprocess-{}': \n{}".format(product_name, popen_params))
         p = subprocess.Popen(popen_params)
-        logging.info("{} initiated for file '{}', pid {}".format(product_name, os.path.basename(file), p.pid))
+        logging.info("{} subprocess initiated, pid {}".format(product_name, p.pid))
         # logging.debug("popen output: {}".format(p)) < I don' think this works, b/c we are not piping stdout or anything
     except Exception as e:
-        logging.error("error invoking bkmkr subprocess; params: {}" % popen_params, exc_info=True)
+        logging.error("error invoking bkmkr subprocess; params: {}".format(popen_params), exc_info=True)
         if p:
             logging.info("(popen output: {})".format(p))
         sendExceptionAlert(e, err_dict)
@@ -121,5 +121,5 @@ def invokeSubprocess(popen_params, product_name, err_dict):
 # # # setup logging
 # create log dir if it does not exist
 try_create_dir(logdir, err_dict)
-logging.basicConfig(filename=logfile, level=logging.DEBUG)#INFO)
+logging.basicConfig(filename=logfile, level=logging.INFO)#DEBUG)
 logging.info("* * * * * * running '{}':  {}".format(this_script, datetime.now().strftime("%y-%m-%d_%H:%M:%S")))
