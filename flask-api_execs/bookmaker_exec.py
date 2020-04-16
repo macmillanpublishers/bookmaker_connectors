@@ -1,12 +1,97 @@
 # this file accepts arguments from flask api and invokes bookmaker process
 import os
+import shutil
 import logging
 import shared_cfg
+import platform
+from textwrap import dedent
 
 
 # # Local key definitions
 productname = 'bookmaker'
+alerttxts = ''
 product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "rs_to_bkmkr.bat")
+bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp", shared_cfg.bkmkr_project))
+if platform.system() != 'Windows':  # for testing:
+    bkmkr_tmpdir = os.path.join(os.sep, 'Users', shared_cfg.currentuser, 'testup', 'bkmkr_tmp')
+
+
+# # # ERROR MESSAGES for emails:
+alertmail_subject = "bookmaker update: a problem with your submitted files"
+if os.path.isfile(shared_cfg.staging_file):
+    alertmail_subject += '- {}'.format(shared_cfg.server)
+alertmail_txt = dedent("""
+    Hello {uname},
+
+    Bookmaker encountered the problem(s) listed below when attempting to process your submitted file(s):
+    (submitted file(s): {infile})
+
+    {alerttxts}
+
+    Please resolve the above issues and resubmit to bookmaker!
+
+    Or contact the workflows team at {to_mail} for further assistance:)
+    """)
+
+
+# # # FUNCTIONS
+# walk through the tree and unzip all .zips (not nested ones)
+def walkAndUnzip(root_dir, err_dict):
+    try:
+        for root, dirs, files in os.walk(root_dir):
+            zips = [f for f in files if (os.path.splitext(f)[1] == '.zip' and os.path.join(root, f) != shared_cfg.inputfile)]
+            dirs[:] = [d for d in dirs if d not in ['__MACOSX']]
+            for name in zips:
+                # print('found zip {}'.format(os.path.join(root, name)))
+                logging.debug("unzipping sub-zip: {}".format(os.path.join(root, name)))
+                shared_cfg.unzipZips(os.path.join(root, name), shared_cfg.err_dict)
+    except Exception as e:
+        logging.error('Error walking and unzipping "{}"'.format(inputfile), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+
+def checkSubmittedFiles(root_dir, err_dict):
+    walkAndUnzip(root_dir, err_dict)
+    word_docs = []
+    all_docs = {}
+    dupe_files = set()
+    try:
+        for root, dirs, files in os.walk(root_dir):
+            dirs[:] = [d for d in dirs if d not in ['__MACOSX']]
+            files[:] = [f for f in files if f not in ['.DS_Store'] and os.path.splitext(f)[1] != '.zip']
+            for name in files:
+                relative_name = os.path.join(root, name).replace(root_dir,'')
+                # capture all .doc or .docx files so we can count them
+                if os.path.splitext(name)[1] == '.docx' or os.path.splitext(name)[1] == '.doc':
+                    word_docs.append(relative_name)
+                # check if we've already captured a doc with this name
+                if name in all_docs.keys():
+                    # track relative names of both dupes
+                    dupe_files.add(relative_name)
+                    dupe_files.add(all_docs[name])
+                all_docs[name] = relative_name
+                # print(os.path.join(root, name))
+    except Exception as e:
+        logging.error('Error checking bookmaker submitted files "{}"'.format(inputfile), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+    finally:
+        return word_docs, list(dupe_files)
+
+def passBookmakerSubmittedFiles(root_dir, new_tmpdir, err_dict):
+    try:
+        for root, dirs, files in os.walk(root_dir):
+            dirs[:] = [d for d in dirs if d not in ['__MACOSX']]
+            files[:] = [f for f in files if f not in ['.DS_Store'] and os.path.splitext(f)[1] != '.zip']
+            for name in files:
+                # print(os.path.join(root, name))
+                currentfile = os.path.join(root, name)
+                movedfile = os.path.join(new_tmpdir, name)
+                logging.debug("copying {} to {}".format(currentfile, movedfile))
+                shutil.move(currentfile, movedfile)
+        return True
+    except Exception as e:
+        logging.error('Error sending submitted files to bookmaker "{}"'.format(inputfile), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+        return False
 
 
 # # # RUN
@@ -14,12 +99,40 @@ if __name__ == '__main__':
     try:
         # unzip file if it was a zip, right into the parentdir
         shared_cfg.unzipZips(shared_cfg.inputfile, shared_cfg.err_dict)
-        # unlike the other two execs; here we want all files passed. May walk tree and pickup
-        #   any with whitelisted file exts. (or ignore blacklisted ones)
-        for fname in os.listdir(shared_cfg.parentdir):
-            if os.path.splitext(fname)[1] == '.docx':
-                file = os.path.join(shared_cfg.parentdir, fname)
-                logging.debug('found docx: {}'.format(file))
+        # unlike the other two execs; here we want all files passed. Walking folder-tree (if present) three times:
+        #   Once to unzip any nested zips (just one pass, not digging into nested>nested zips)
+        #   Again to verify only one .doc(x) file and no files with the same names in different dirs
+        #   And finally to pass unique files to a new tmpfolder for bookmaker
+        word_docs, dupe_files = checkSubmittedFiles(shared_cfg.parentdir, shared_cfg.err_dict)
+        # prepare notice for the wrong number of docx files
+        if len(word_docs) != 1:
+            alerttxts += "-- Bookmaker requires that exactly one Word .doc(x) be present in each file submission; however, "
+            if len(word_docs) == 0:
+                alertstr = "no .doc(x) files were found among submitted file(s).\n"
+            else:
+                alertstr = "more than one .doc(x) file was present among submitted file(s).\n(docx files: {})\n\n".format(word_docs)
+            alerttxts += alertstr
+            logging.warn(alertstr)
+        # prepare notice re: duplicate filenames in received heirarchy
+        if dupe_files:
+            alertstr = "-- Some files with exact same name were found among submitted files. \nFiles: {}\n\n".format(dupe_files)
+            alerttxts += alertstr
+            logging.warn(alertstr)
+        # send mail as needed
+        if alerttxts:
+            logging.info("sending mail to submitter re: previous warnings")
+            shared_cfg.sendmail.sendMail(shared_cfg.user_email, alertmail_subject, \
+                alertmail_txt.format(uname=shared_cfg.user_name, infile=shared_cfg.inputfile, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
+        # we're ok! proceed with creating tmpdir for bookmaker and moving files there
+        if not dupe_files and len(word_docs) == 1:
+            # make dest tmpdir if no exist
+            new_tmpdir = os.path.join(bkmkr_tmpdir, os.path.basename(shared_cfg.parentdir))
+            shared_cfg.try_create_dir(new_tmpdir, shared_cfg.err_dict)
+            filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, shared_cfg.err_dict)
+            logging.debug("filepass_ok: {}".format(filepass_ok))
+
+            if send_ok == True:
+                newdocfilepath = os.path.join(new_tmpdir, os.path.basename(word_docs[0]))
                 popen_params = [r'{}'.format(os.path.join(product_cmd)), file, shared_cfg.runtype_string, \
                     shared_cfg.user_email, shared_cfg.user_name, shared_cfg.bookmakerproject]
                 logging.info("invoking {} for {}".format(productname, fname))
@@ -29,12 +142,6 @@ if __name__ == '__main__':
         logging.error("untrapped top-level exception occurred", exc_info=True)
         shared_cfg.sendExceptionAlert(e, shared_cfg.err_dict)
 
-    # from sys import argv
-    #
-    # count = 0
-    # for arg in argv:
-    # 	count += 1
-    # 	print("argv{}: {}".format(count, arg))
 
 # TO do: look at existing .bat, does it cover param passing needs? Can make a new one. Can write params passed initially
 # to metadata in tmparchive_rsuite tooo... This may work a little differently than wat we have going.
