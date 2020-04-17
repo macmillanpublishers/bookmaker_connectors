@@ -9,22 +9,22 @@ from textwrap import dedent
 
 # # Local key definitions
 productname = 'bookmaker'
-alerttxts = ''
+infile_basename = os.path.basename(shared_cfg.inputfile)
 product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "rs_to_bkmkr.bat")
 bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp", shared_cfg.bkmkr_project))
 if platform.system() != 'Windows':  # for testing:
     bkmkr_tmpdir = os.path.join(os.sep, 'Users', shared_cfg.currentuser, 'testup', 'bkmkr_tmp')
 
 
-# # # ERROR MESSAGES for emails:
+# # # EMAIL TEMPLATES for bookmaker_Exec:
+# for Alerts
+alerttxts = ''
 alertmail_subject = "bookmaker update: a problem with your submitted files"
-if os.path.isfile(shared_cfg.staging_file):
-    alertmail_subject += '- {}'.format(shared_cfg.server)
 alertmail_txt = dedent("""
     Hello {uname},
 
     Bookmaker encountered the problem(s) listed below when attempting to process your submitted file(s):
-    (submitted file(s): {infile})
+    (submitted file(s): {infile_basename})
 
     {alerttxts}
 
@@ -32,6 +32,27 @@ alertmail_txt = dedent("""
 
     Or contact the workflows team at {to_mail} for further assistance:)
     """)
+
+# for Success
+successmail_subject = "bookmaker processing begun for: '{docx_basename}'"
+zipfile_extratext = ''
+if shared_cfg.file_ext == '.zip':
+    zipfile_extratext = " (from zipfile '{}')".format(infile_basename)
+successmail_txt = dedent("""
+    Hello {uname},
+
+    Bookmaker has begun processing your submitted manuscript '{docx_basename}'{zipfile_extratext}.
+
+
+    If you don't receive a follow-up email from bookmaker within 20-25 minutes, please reach out to the workflows team for further assistance: {to_mail}.
+    """)
+
+# addons for Staging server
+if os.path.isfile(shared_cfg.staging_file):
+    alertmail_subject += '- {}'.format(shared_cfg.server)
+    alertmail_txt += '\n\nSENT FROM BOOKMAKER STAGING (TESTING) SERVER'
+    successmail_subject += '- {}'.format(shared_cfg.server)
+    successmail_txt += '\n\nSENT FROM BOOKMAKER STAGING (TESTING) SERVER'
 
 
 # # # FUNCTIONS
@@ -108,21 +129,21 @@ if __name__ == '__main__':
         if len(word_docs) != 1:
             alerttxts += "-- Bookmaker requires that exactly one Word .doc(x) be present in each file submission; however, "
             if len(word_docs) == 0:
-                alertstr = "no .doc(x) files were found among submitted file(s).\n"
+                alertstr = "no .doc(x) files were found among submitted file(s)."
             else:
-                alertstr = "more than one .doc(x) file was present among submitted file(s).\n(docx files: {})\n\n".format(word_docs)
-            alerttxts += alertstr
+                alertstr = "more than one .doc(x) file was present among submitted file(s).\n(docx files: {})".format(word_docs)
+            alerttxts += "{}\n\n".format(alertstr)
             logging.warn(alertstr)
         # prepare notice re: duplicate filenames in received heirarchy
         if dupe_files:
-            alertstr = "-- Some files with exact same name were found among submitted files. \nFiles: {}\n\n".format(dupe_files)
-            alerttxts += alertstr
+            alertstr = "-- Some files with exact same name were found among submitted files. \nFiles: {}".format(dupe_files)
+            alerttxts += "{}\n\n".format(alertstr)
             logging.warn(alertstr)
         # send mail as needed
         if alerttxts:
             logging.info("sending mail to submitter re: previous warnings")
             shared_cfg.sendmail.sendMail(shared_cfg.user_email, alertmail_subject, \
-                alertmail_txt.format(uname=shared_cfg.user_name, infile=shared_cfg.inputfile, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
+                alertmail_txt.format(uname=shared_cfg.user_name, infile_basename=infile_basename, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
         # we're ok! proceed with creating tmpdir for bookmaker and moving files there
         if not dupe_files and len(word_docs) == 1:
             # make dest tmpdir if no exist
@@ -131,12 +152,21 @@ if __name__ == '__main__':
             filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, shared_cfg.err_dict)
             logging.debug("filepass_ok: {}".format(filepass_ok))
 
-            if send_ok == True:
-                newdocfilepath = os.path.join(new_tmpdir, os.path.basename(word_docs[0]))
-                popen_params = [r'{}'.format(os.path.join(product_cmd)), file, shared_cfg.runtype_string, \
-                    shared_cfg.user_email, shared_cfg.user_name, shared_cfg.bookmakerproject]
-                logging.info("invoking {} for {}".format(productname, fname))
-                output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
+            # tempdir created, files moved, now kickoff bookmaker!
+            if filepass_ok == True:
+                # set params
+                docx_basename = os.path.basename(word_docs[0])
+                newdocfilepath = os.path.join(new_tmpdir, docx_basename)
+                popen_params = [r'{}'.format(os.path.join(product_cmd)), newdocfilepath, new_tmpdir, \
+                    shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name, shared_cfg.bkmkr_project]
+                # invoke subprocess.popen
+                logging.info("invoking {} for {}".format(productname, newdocfilepath))
+                process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
+                # send 'bookmaker_begun' email to submitter
+                if process_ok == True:
+                    shared_cfg.sendmail.sendMail(shared_cfg.user_email, successmail_subject.format(docx_basename=docx_basename), \
+                        successmail_txt.format(uname=shared_cfg.user_name, zipfile_extratext=zipfile_extratext, docx_basename=docx_basename, to_mail=shared_cfg.alert_emails_to[0]))
+                    logging.info("emailed submitter bookmaker-start notification")
 
     except Exception as e:
         logging.error("untrapped top-level exception occurred", exc_info=True)

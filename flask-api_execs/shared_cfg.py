@@ -112,11 +112,13 @@ def invokeSubprocess(popen_params, product_name, err_dict):
         p = subprocess.Popen(popen_params)
         logging.info("{} subprocess initiated, pid {}".format(product_name, p.pid))
         # logging.debug("popen output: {}".format(p)) < I don' think this works, b/c we are not piping stdout or anything
+        return True
     except Exception as e:
         logging.error("error invoking bkmkr subprocess; params: {}".format(popen_params), exc_info=True)
         if p:
             logging.info("(popen output: {})".format(p))
         sendExceptionAlert(e, err_dict)
+        return False
 
 # # # setup logging
 # create log dir if it does not exist
