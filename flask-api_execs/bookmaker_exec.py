@@ -67,8 +67,8 @@ def walkAndUnzip(root_dir, err_dict):
                 logging.debug("unzipping sub-zip: {}".format(os.path.join(root, name)))
                 shared_cfg.unzipZips(os.path.join(root, name), shared_cfg.err_dict)
     except Exception as e:
-        logging.error('Error walking and unzipping "{}"'.format(inputfile), exc_info=True)
-        sendExceptionAlert(e, err_dict)
+        logging.error('Error walking and unzipping "{}"'.format(shared_cfg.inputfile), exc_info=True)
+        shared_cfg.sendExceptionAlert(e, err_dict)
 
 def checkSubmittedFiles(root_dir, err_dict):
     walkAndUnzip(root_dir, err_dict)
@@ -92,26 +92,29 @@ def checkSubmittedFiles(root_dir, err_dict):
                 all_docs[name] = relative_name
                 # print(os.path.join(root, name))
     except Exception as e:
-        logging.error('Error checking bookmaker submitted files "{}"'.format(inputfile), exc_info=True)
-        sendExceptionAlert(e, err_dict)
+        logging.error('Error checking bookmaker submitted files "{}"'.format(shared_cfg.inputfile), exc_info=True)
+        shared_cfg.sendExceptionAlert(e, err_dict)
     finally:
         return word_docs, list(dupe_files)
 
-def passBookmakerSubmittedFiles(root_dir, new_tmpdir, err_dict):
+def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submitted_imagesdir, err_dict):
     try:
         for root, dirs, files in os.walk(root_dir):
             dirs[:] = [d for d in dirs if d not in ['__MACOSX']]
             files[:] = [f for f in files if f not in ['.DS_Store'] and os.path.splitext(f)[1] != '.zip']
             for name in files:
-                # print(os.path.join(root, name))
+                fname_ext = os.path.splitext(name)[1]
                 currentfile = os.path.join(root, name)
-                movedfile = os.path.join(new_tmpdir, name)
+                movedfile = os.path.join(submitted_imagesdir, name)
+                # docx and config.json go in newtmpdir_root, everythign else goes in s-i dir
+                if fname_ext == '.docx' or fname_ext == '.doc' or name == 'config.json':
+                    movedfile = os.path.join(new_tmpdir, name)
                 logging.debug("copying {} to {}".format(currentfile, movedfile))
                 shutil.move(currentfile, movedfile)
         return True
     except Exception as e:
-        logging.error('Error sending submitted files to bookmaker "{}"'.format(inputfile), exc_info=True)
-        sendExceptionAlert(e, err_dict)
+        logging.error('Error sending submitted files to bookmaker "{}"'.format(shared_cfg.inputfile), exc_info=True)
+        shared_cfg.sendExceptionAlert(e, err_dict)
         return False
 
 
@@ -146,10 +149,12 @@ if __name__ == '__main__':
                 alertmail_txt.format(uname=shared_cfg.user_name, infile_basename=infile_basename, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
         # we're ok! proceed with creating tmpdir for bookmaker and moving files there
         if not dupe_files and len(word_docs) == 1:
-            # make dest tmpdir if no exist
-            new_tmpdir = os.path.join(bkmkr_tmpdir, os.path.basename(shared_cfg.parentdir))
-            shared_cfg.try_create_dir(new_tmpdir, shared_cfg.err_dict)
-            filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, shared_cfg.err_dict)
+            # make dest tmpdir(s)
+            new_tmpdir = os.path.join(bkmkr_tmpdir, shared_cfg.bkmkr_project, os.path.basename(shared_cfg.parentdir))
+            submitted_imagesdir = os.path.join(new_tmpdir, 'submitted_images') # bookmaker sub-tmpdir for all non-docx files
+            # shared_cfg.try_create_dir(new_tmpdir, shared_cfg.err_dict)
+            shared_cfg.try_create_dir(submitted_imagesdir, shared_cfg.err_dict)
+            filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, submitted_imagesdir, shared_cfg.err_dict)
             logging.debug("filepass_ok: {}".format(filepass_ok))
 
             # tempdir created, files moved, now kickoff bookmaker!
@@ -158,10 +163,10 @@ if __name__ == '__main__':
                 docx_basename = os.path.basename(word_docs[0])
                 newdocfilepath = os.path.join(new_tmpdir, docx_basename)
                 popen_params = [r'{}'.format(os.path.join(product_cmd)), newdocfilepath, new_tmpdir, \
-                    shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name, shared_cfg.bkmkr_project]
+                    shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name]
                 # invoke subprocess.popen
                 logging.info("invoking {} for {}".format(productname, newdocfilepath))
-                process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
+                # process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
                 # send 'bookmaker_begun' email to submitter
                 if process_ok == True:
                     shared_cfg.sendmail.sendMail(shared_cfg.user_email, successmail_subject.format(docx_basename=docx_basename), \
@@ -171,9 +176,3 @@ if __name__ == '__main__':
     except Exception as e:
         logging.error("untrapped top-level exception occurred", exc_info=True)
         shared_cfg.sendExceptionAlert(e, shared_cfg.err_dict)
-
-
-# TO do: look at existing .bat, does it cover param passing needs? Can make a new one. Can write params passed initially
-# to metadata in tmparchive_rsuite tooo... This may work a little differently than wat we have going.
-# ALSO:
-# need to capture all files in zip. Again look at handling in tmparchive_rsuite.
