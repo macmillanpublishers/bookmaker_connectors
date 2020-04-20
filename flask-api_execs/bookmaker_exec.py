@@ -11,7 +11,7 @@ from textwrap import dedent
 productname = 'bookmaker'
 infile_basename = os.path.basename(shared_cfg.inputfile)
 product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "bookmaker_direct.bat")
-bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp", shared_cfg.bkmkr_project))
+bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp"))
 if platform.system() != 'Windows':  # for testing:
     bkmkr_tmpdir = os.path.join(os.sep, 'Users', shared_cfg.currentuser, 'testup', 'bkmkr_tmp')
 
@@ -166,7 +166,7 @@ if __name__ == '__main__':
                     shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name]
                 # invoke subprocess.popen
                 logging.info("invoking {} for {}".format(productname, newdocfilepath))
-                # process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
+                process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
                 # send 'bookmaker_begun' email to submitter
                 if process_ok == True:
                     shared_cfg.sendmail.sendMail(shared_cfg.user_email, successmail_subject.format(docx_basename=docx_basename), \
