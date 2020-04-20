@@ -10,7 +10,7 @@ from textwrap import dedent
 # # Local key definitions
 productname = 'bookmaker'
 infile_basename = os.path.basename(shared_cfg.inputfile)
-product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "rs_to_bkmkr.bat")
+product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "bookmaker_direct.bat")
 bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp", shared_cfg.bkmkr_project))
 if platform.system() != 'Windows':  # for testing:
     bkmkr_tmpdir = os.path.join(os.sep, 'Users', shared_cfg.currentuser, 'testup', 'bkmkr_tmp')
