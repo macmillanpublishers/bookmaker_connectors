@@ -85,7 +85,7 @@ def sendExceptionAlert(errstring, err_dict):
 
 def try_create_dir(newpath, err_dict):
     try:
-        print newpath
+        logging.debug("creating dir: {}".format(newpath))
         if not os.path.exists(newpath):
             os.makedirs(newpath)
     except Exception as e:
