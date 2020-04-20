@@ -88,10 +88,10 @@ end
 # # ---------------------- MAIN
 
 # local definitions from json files
-rsuite_metadata_hash = readJson(Bkmkr::Paths.fromrsuite_Metadata_json, 'read_rsuite_metadata_json')
+api_metadata_hash = readJson(Bkmkr::Paths.api_Metadata_json, 'read_api_metadata_json')
 rs_server_hash = readJson(rsuite_server_json, 'read_rs_server_json')
-rsuite_isbn = rsuite_metadata_hash['edition_eanisbn13']
-rs_server = rsuite_metadata_hash['rsuite_server']
+rsuite_isbn = api_metadata_hash['edition_eanisbn13']
+rs_server = api_metadata_hash['rsuite_server']
 serveraddress = rs_server_hash[rs_server]['fqdn']
 api_uname = rs_server_hash[rs_server]['api_uname']
 api_pword = rs_server_hash[rs_server]['api_pword']

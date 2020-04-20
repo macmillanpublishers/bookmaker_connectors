@@ -88,7 +88,6 @@ def try_create_dir(newpath, err_dict):
         print newpath
         if not os.path.exists(newpath):
             os.makedirs(newpath)
-            print "I did it"
     except Exception as e:
         logging.error('Destination dir "{}" could not be created'.format(newpath), exc_info=True)
         sendExceptionAlert(e, err_dict)
