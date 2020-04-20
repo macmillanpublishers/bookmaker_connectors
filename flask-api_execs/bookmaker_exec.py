@@ -145,7 +145,7 @@ if __name__ == '__main__':
         # send mail as needed
         if alerttxts:
             logging.info("sending mail to submitter re: previous warnings")
-            shared_cfg.sendmail.sendMail(shared_cfg.user_email, alertmail_subject, \
+            shared_cfg.sendmail.sendMail([shared_cfg.user_email], alertmail_subject, \
                 alertmail_txt.format(uname=shared_cfg.user_name, infile_basename=infile_basename, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
         # we're ok! proceed with creating tmpdir for bookmaker and moving files there
         if not dupe_files and len(word_docs) == 1:
@@ -169,7 +169,7 @@ if __name__ == '__main__':
                 process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
                 # send 'bookmaker_begun' email to submitter
                 if process_ok == True:
-                    shared_cfg.sendmail.sendMail(shared_cfg.user_email, successmail_subject.format(docx_basename=docx_basename), \
+                    shared_cfg.sendmail.sendMail([shared_cfg.user_email], successmail_subject.format(docx_basename=docx_basename), \
                         successmail_txt.format(uname=shared_cfg.user_name, zipfile_extratext=zipfile_extratext, docx_basename=docx_basename, to_mail=shared_cfg.alert_emails_to[0]))
                     logging.info("emailed submitter bookmaker-start notification")
 
