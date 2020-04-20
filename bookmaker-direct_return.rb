@@ -103,13 +103,13 @@ api_pword = rs_server_hash[rs_server]['api_pword']
 # get list of files to send from final_dir
 files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
 
-# prepare GET & capture rsuite session key
-auth = {username: api_uname, password: api_pword}
-url_GET = "http://#{serveraddress}/rsuite/rest/v2/user/session"
-api_GET_result, sessionkey = getRsuiteSession(url_GET, auth, 'api_GET_rsuite_sessionkey')
-
-# zip files in final_dir (if GET was successful)
-if api_GET_result == 200 && sessionkey
+# # prepare GET & capture rsuite session key
+# auth = {username: api_uname, password: api_pword}
+# url_GET = "http://#{serveraddress}/rsuite/rest/v2/user/session"
+# api_GET_result, sessionkey = getRsuiteSession(url_GET, auth, 'api_GET_rsuite_sessionkey')
+#
+# # zip files in final_dir (if GET was successful)
+# if api_GET_result == 200 && sessionkey
   zipfile_name = "#{rsuite_isbn}.zip"
   zipfile_dir = final_dir
   zipfile_fullpath = File.join(zipfile_dir, zipfile_name)
@@ -117,22 +117,22 @@ if api_GET_result == 200 && sessionkey
   zip_test = zipFiles(zip_wrapper_py, zipfile_dir, zipfile_fullpath, files_to_send_list, 'zip_bookmaker_files_to_send')
   @log_hash['zip_test'] = zip_test
 
-  # if zip was successful, POST zipfile to RSuite!
-  if zip_test == 'present'
-    url_POST = "http://#{serveraddress}/rsuite/rest/v1/api/mpg:webservice.BookmakerUploader?skey=#{sessionkey}"
-    result_code, result_msg  = postZipToRSuite(api_POST_to_RS_py, url_POST, zipfile_fullpath, 'api_POST_zipfile_to_rsuite')
-    # log results, eventually send mail on fail
-    if result_code == '200'
-      logstring = "success: #{result_msg}"
-    else
-      logstring = "ERROR, code: #{result_code}, msg: #{result_msg}"
-    end
-  else
-    logstring = "ERROR: Bookmaker zipfile for upload-to-rsuite not found: \"#{zipfile_fullpath}\""
-  end
-else
-  logstring = "ERROR: Could not get RS sessionkey for user \"#{api_uname}\", upload to RSuite failed"
-end
+#   # if zip was successful, POST zipfile to RSuite!
+#   if zip_test == 'present'
+#     url_POST = "http://#{serveraddress}/rsuite/rest/v1/api/mpg:webservice.BookmakerUploader?skey=#{sessionkey}"
+#     result_code, result_msg  = postZipToRSuite(api_POST_to_RS_py, url_POST, zipfile_fullpath, 'api_POST_zipfile_to_rsuite')
+#     # log results, eventually send mail on fail
+#     if result_code == '200'
+#       logstring = "success: #{result_msg}"
+#     else
+#       logstring = "ERROR, code: #{result_code}, msg: #{result_msg}"
+#     end
+#   else
+#     logstring = "ERROR: Bookmaker zipfile for upload-to-rsuite not found: \"#{zipfile_fullpath}\""
+#   end
+# else
+#   logstring = "ERROR: Could not get RS sessionkey for user \"#{api_uname}\", upload to RSuite failed"
+# end
 puts "api_POST_result: ", logstring  #< debug
 @log_hash['api_POST_result'] = logstring
 
