@@ -162,7 +162,7 @@ if __name__ == '__main__':
                 # set params
                 docx_basename = os.path.basename(word_docs[0])
                 newdocfilepath = os.path.join(new_tmpdir, docx_basename)
-                popen_params = [r'{}'.format(os.path.join(product_cmd)), newdocfilepath, new_tmpdir, \
+                popen_params = [r'{}'.format(os.path.join(product_cmd)), newdocfilepath, \
                     shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name]
                 # invoke subprocess.popen
                 logging.info("invoking {} for {}".format(productname, newdocfilepath))
