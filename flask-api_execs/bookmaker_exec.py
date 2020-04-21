@@ -97,7 +97,7 @@ def checkSubmittedFiles(root_dir, err_dict):
     finally:
         return word_docs, list(dupe_files)
 
-def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submitted_imagesdir, err_dict):
+def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submittedfiles_dir, err_dict):
     try:
         for root, dirs, files in os.walk(root_dir):
             dirs[:] = [d for d in dirs if d not in ['__MACOSX']]
@@ -105,7 +105,7 @@ def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submitted_imagesdir, err_d
             for name in files:
                 fname_ext = os.path.splitext(name)[1]
                 currentfile = os.path.join(root, name)
-                movedfile = os.path.join(submitted_imagesdir, name)
+                movedfile = os.path.join(submittedfiles_dir, name)
                 # docx and config.json go in newtmpdir_root, everythign else goes in s-i dir
                 if fname_ext == '.docx' or fname_ext == '.doc' or name == 'config.json':
                     movedfile = os.path.join(new_tmpdir, name)
@@ -151,10 +151,10 @@ if __name__ == '__main__':
         if not dupe_files and len(word_docs) == 1:
             # make dest tmpdir(s)
             new_tmpdir = os.path.join(bkmkr_tmpdir, shared_cfg.bkmkr_project, os.path.basename(shared_cfg.parentdir))
-            submitted_imagesdir = os.path.join(new_tmpdir, 'submitted_images') # bookmaker sub-tmpdir for all non-docx files
+            submittedfiles_dir = os.path.join(new_tmpdir, 'submitted_files') # bookmaker sub-tmpdir for all non-docx files
             # shared_cfg.try_create_dir(new_tmpdir, shared_cfg.err_dict)
-            shared_cfg.try_create_dir(submitted_imagesdir, shared_cfg.err_dict)
-            filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, submitted_imagesdir, shared_cfg.err_dict)
+            shared_cfg.try_create_dir(submittedfiles_dir, shared_cfg.err_dict)
+            filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, submittedfiles_dir, shared_cfg.err_dict)
             logging.debug("filepass_ok: {}".format(filepass_ok))
 
             # tempdir created, files moved, now kickoff bookmaker!
