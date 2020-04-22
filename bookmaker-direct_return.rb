@@ -12,10 +12,12 @@ local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 final_dir = Metadata.final_dir
 scripts_dir = Bkmkr::Paths.scripts_dir
 rsuite_server_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "rsuite_servers.json")
+post_urls_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "camelPOST_urls.json")
 zip_wrapper_py = File.join(scripts_dir, "bookmaker_connectors", "zip_wrapper.py")
-api_POST_to_RS_py = File.join(scripts_dir, "bookmaker_connectors", "api_POST_to_RS.py")
+api_POST_to_camel_py = File.join(scripts_dir, "bookmaker_connectors", "api_POST_to_camel.py")
 sendfiles_regexp = File.join(final_dir, "*{_ERROR.txt,_POD.pdf,.epub}")
-
+testing_value_file = File.join(Bkmkr::Paths.resource_dir, "staging.txt")
+api_POST_results = ''
 
 # ---------------------- METHODS
 
@@ -35,6 +37,16 @@ def getFileList(regexp, logkey='')
 rescue => logstring
 ensure
     Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
+end
+
+## wrapping Bkmkr::Tools.runpython in a new method for this script; to return a result for json_logfile
+def localRunPython(py_script, args, logkey='')
+	result = Bkmkr::Tools.runpython(py_script, args).strip()
+  logstring = "result_string: #{result}"
+  return result
+rescue => logstring
+ensure
+  Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
 
 def getRsuiteSession(url, auth, logkey='')
@@ -89,8 +101,38 @@ end
 
 # local definitions from json files
 api_metadata_hash = readJson(Bkmkr::Paths.api_Metadata_json, 'read_api_metadata_json')
-rsuite_isbn = api_metadata_hash['edition_eanisbn13']
-if Bkmkr::Project.runtype == 'rsuite'
+post_urls_hash = readJson(post_urls_json, 'read_camel_POSTurls_json')
+
+# get list of files to send from final_dir
+files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
+@log_hash['files_to_send_list'] = files_to_send_list
+
+# different steps by runtype
+if Bkmkr::Project.runtype == 'direct'
+  # get url
+  post_url = post_urls_hash['bookmaker']
+  if File.file?(testing_value_file)
+    post_url = post_urls_hash['bookmaker_stg']
+  end
+  # set destpath for url: project/tmpdir
+  bkmkrproject = File.basename(File.dirname(Bkmkr::Paths.project_tmp_dir))
+  this_outfolder = File.basename(Bkmkr::Paths.project_tmp_dir)
+  dest_path = "#{bkmkrproject}/OUT/#{this_outfolder}"
+  post_url += "?folder=#{dest_path}"
+  #loop through files to upload:
+  api_result_errs = ''
+  for file in files_to_send_list
+    argstring = "#{file} #{post_url}"
+    api_result = localRunPython(api_POST_to_camel_py, argstring, "api_POST_to_camel--file:_#{file}")
+    if api_result.downcase != 'success'
+      api_result_errs += "- api_err: \'#{api_result}\', file: \'#{file}\'\n"
+    end
+  end
+  if api_result_errs == ''
+    api_POST_results = 'success'
+  end
+else
+  rsuite_isbn = api_metadata_hash['edition_eanisbn13']
   rs_server_hash = readJson(rsuite_server_json, 'read_rs_server_json')
   rs_server = api_metadata_hash['rsuite_server']
   serveraddress = rs_server_hash[rs_server]['fqdn']
@@ -99,43 +141,41 @@ if Bkmkr::Project.runtype == 'rsuite'
   # log key values
   @log_hash['rsuite_isbn'] = rsuite_isbn
   @log_hash['serveraddress'] = serveraddress
+
+  # prepare GET & capture rsuite session key
+  auth = {username: api_uname, password: api_pword}
+  url_GET = "http://#{serveraddress}/rsuite/rest/v2/user/session"
+  api_GET_result, sessionkey = getRsuiteSession(url_GET, auth, 'api_GET_rsuite_sessionkey')
+
+  # zip files in final_dir (if GET was successful)
+  if api_GET_result == 200 && sessionkey
+    zipfile_name = "#{rsuite_isbn}.zip"
+    zipfile_dir = final_dir
+    zipfile_fullpath = File.join(zipfile_dir, zipfile_name)
+    @log_hash['expected_zip_path'] = zipfile_fullpath
+    zip_test = zipFiles(zip_wrapper_py, zipfile_dir, zipfile_fullpath, files_to_send_list, 'zip_bookmaker_files_to_send')
+    @log_hash['zip_test'] = zip_test
+
+    # if zip was successful, POST zipfile to RSuite!
+    if zip_test == 'present'
+      url_POST = "http://#{serveraddress}/rsuite/rest/v1/api/mpg:webservice.BookmakerUploader?skey=#{sessionkey}"
+      result_code, result_msg  = postZipToRSuite(api_POST_to_RS_py, url_POST, zipfile_fullpath, 'api_POST_zipfile_to_rsuite')
+      # log results, eventually send mail on fail
+      if result_code == '200'
+        api_POST_results = "success: #{result_msg}"
+      else
+        api_POST_results = "ERROR, code: #{result_code}, msg: #{result_msg}"
+      end
+    else
+      api_POST_results = "ERROR: Bookmaker zipfile for upload-to-rsuite not found: \"#{zipfile_fullpath}\""
+    end
+  else
+    api_POST_results = "ERROR: Could not get RS sessionkey for user \"#{api_uname}\", upload to RSuite failed"
+  end
 end
 
-# get list of files to send from final_dir
-files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
-
-# # prepare GET & capture rsuite session key
-# auth = {username: api_uname, password: api_pword}
-# url_GET = "http://#{serveraddress}/rsuite/rest/v2/user/session"
-# api_GET_result, sessionkey = getRsuiteSession(url_GET, auth, 'api_GET_rsuite_sessionkey')
-#
-# # zip files in final_dir (if GET was successful)
-# if api_GET_result == 200 && sessionkey
-  zipfile_name = "#{rsuite_isbn}.zip"
-  zipfile_dir = final_dir
-  zipfile_fullpath = File.join(zipfile_dir, zipfile_name)
-  @log_hash['expected_zip_path'] = zipfile_fullpath
-  zip_test = zipFiles(zip_wrapper_py, zipfile_dir, zipfile_fullpath, files_to_send_list, 'zip_bookmaker_files_to_send')
-  @log_hash['zip_test'] = zip_test
-
-#   # if zip was successful, POST zipfile to RSuite!
-#   if zip_test == 'present'
-#     url_POST = "http://#{serveraddress}/rsuite/rest/v1/api/mpg:webservice.BookmakerUploader?skey=#{sessionkey}"
-#     result_code, result_msg  = postZipToRSuite(api_POST_to_RS_py, url_POST, zipfile_fullpath, 'api_POST_zipfile_to_rsuite')
-#     # log results, eventually send mail on fail
-#     if result_code == '200'
-#       logstring = "success: #{result_msg}"
-#     else
-#       logstring = "ERROR, code: #{result_code}, msg: #{result_msg}"
-#     end
-#   else
-#     logstring = "ERROR: Bookmaker zipfile for upload-to-rsuite not found: \"#{zipfile_fullpath}\""
-#   end
-# else
-#   logstring = "ERROR: Could not get RS sessionkey for user \"#{api_uname}\", upload to RSuite failed"
-# end
-puts "api_POST_result: ", logstring  #< debug
-@log_hash['api_POST_result'] = logstring
+puts "api_POST_results: ", api_POST_results  #< debug
+@log_hash['api_POST_results'] = api_POST_results
 
 # # # Write json log:
 Mcmlln::Tools.logtoJson(@log_hash, 'completed', Time.now)
