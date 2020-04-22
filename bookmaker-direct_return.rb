@@ -89,16 +89,17 @@ end
 
 # local definitions from json files
 api_metadata_hash = readJson(Bkmkr::Paths.api_Metadata_json, 'read_api_metadata_json')
-rs_server_hash = readJson(rsuite_server_json, 'read_rs_server_json')
 rsuite_isbn = api_metadata_hash['edition_eanisbn13']
-rs_server = api_metadata_hash['rsuite_server']
-serveraddress = rs_server_hash[rs_server]['fqdn']
-api_uname = rs_server_hash[rs_server]['api_uname']
-api_pword = rs_server_hash[rs_server]['api_pword']
-
-# log key values
-@log_hash['rsuite_isbn'] = rsuite_isbn
-@log_hash['serveraddress'] = serveraddress
+if Bkmkr::Project.runtype == 'rsuite'
+  rs_server_hash = readJson(rsuite_server_json, 'read_rs_server_json')
+  rs_server = api_metadata_hash['rsuite_server']
+  serveraddress = rs_server_hash[rs_server]['fqdn']
+  api_uname = rs_server_hash[rs_server]['api_uname']
+  api_pword = rs_server_hash[rs_server]['api_pword']
+  # log key values
+  @log_hash['rsuite_isbn'] = rsuite_isbn
+  @log_hash['serveraddress'] = serveraddress
+end
 
 # get list of files to send from final_dir
 files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
