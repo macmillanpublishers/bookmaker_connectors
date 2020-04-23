@@ -18,6 +18,8 @@ api_POST_to_camel_py = File.join(scripts_dir, "bookmaker_connectors", "api_POST_
 sendfiles_regexp = File.join(final_dir, "*{_ERROR.txt,_POD.pdf,.epub}")
 testing_value_file = File.join(Bkmkr::Paths.resource_dir, "staging.txt")
 api_POST_results = ''
+post_url_productstring = 'bookmaker'
+
 
 # ---------------------- METHODS
 
@@ -39,6 +41,22 @@ ensure
     Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
 
+# this function identical to one in validator_cleanup_direct, except added 'bookmaker_project' param
+def getPOSTurl(url_productstring, post_urls_hash, testing_value_file, bookmaker_project, relative_destpath)
+  # get url
+  post_url = post_urls_hash[url_productstring]
+  if File.file?(testing_value_file)
+    post_url = post_urls_hash["#{url_productstring}_stg"]
+  end
+  # add bookmaker project name
+  post_url += bookmaker_project
+  # add dest_folder
+  post_url += "?folder=#{relative_destpath}"
+  return post_url
+rescue => e
+  p e
+end
+
 ## wrapping Bkmkr::Tools.runpython in a new method for this script; to return a result for json_logfile
 def localRunPython(py_script, args, logkey='')
 	result = Bkmkr::Tools.runpython(py_script, args).strip()
@@ -47,6 +65,28 @@ def localRunPython(py_script, args, logkey='')
 rescue => logstring
 ensure
   Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
+end
+
+# this function identical to one in validator_cleanup_direct; except for .py invocation line
+def sendFilesToDrive(files_to_send_list, api_POST_to_camel_py, post_url)
+  #loop through files to upload:
+  api_result_errs = ''
+  for file in files_to_send_list
+    argstring = "#{file} #{post_url}"
+    api_result = localRunPython(api_POST_to_camel_py, argstring, "api_POST_to_camel--file:_#{file}")
+    if api_result.downcase != 'success'
+      api_result_errs += "- api_err: \'#{api_result}\', file: \'#{file}\'\n"
+    end
+  end
+  if api_result_errs == ''
+    api_POST_results = 'success'
+  else
+    api_POST_results = api_result_errs
+  end
+  return api_POST_results
+rescue => e
+  p e
+  return "error with 'sendFilesToDrive': #{e}"
 end
 
 def getRsuiteSession(url, auth, logkey='')
@@ -109,28 +149,16 @@ files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
 
 # different steps by runtype
 if Bkmkr::Project.runtype == 'direct'
-  # get url
-  post_url = post_urls_hash['bookmaker']
-  if File.file?(testing_value_file)
-    post_url = post_urls_hash['bookmaker_stg']
-  end
+
+  # get post URL together
   # set destpath for url: project/tmpdir
-  bkmkrproject = File.basename(File.dirname(Bkmkr::Paths.project_tmp_dir))
-  this_outfolder = File.basename(Bkmkr::Paths.project_tmp_dir)
-  dest_path = "#{bkmkrproject}/OUT/#{this_outfolder}"
-  post_url += "?folder=#{dest_path}"
-  #loop through files to upload:
-  api_result_errs = ''
-  for file in files_to_send_list
-    argstring = "#{file} #{post_url}"
-    api_result = localRunPython(api_POST_to_camel_py, argstring, "api_POST_to_camel--file:_#{file}")
-    if api_result.downcase != 'success'
-      api_result_errs += "- api_err: \'#{api_result}\', file: \'#{file}\'\n"
-    end
-  end
-  if api_result_errs == ''
-    api_POST_results = 'success'
-  end
+  bookmaker_project = File.basename(File.dirname(Bkmkr::Paths.project_tmp_dir))
+  this_tmpdir_name = File.basename(Bkmkr::Paths.project_tmp_dir)
+  post_url = getPOSTurl(post_url_productstring, post_urls_hash, Val::Paths.testing_value_file, bookmaker_project, this_tmpdir_name)
+
+  # send files
+  api_POST_results = sendFilesToDrive(files_to_send_list, api_POST_to_camel_py, post_url)
+
 else
   rsuite_isbn = api_metadata_hash['edition_eanisbn13']
   rs_server_hash = readJson(rsuite_server_json, 'read_rs_server_json')
