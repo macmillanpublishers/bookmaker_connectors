@@ -11,7 +11,6 @@ def apiPOST(file, url_POST):
         r_text = 'Go'
         filename = os.path.basename(file)
         fileobj = open(file,'rb')
-        asas
         r = requests.post(url_POST, data = {"mysubmit":r_text}, files={"file": (filename, fileobj)})
         if (r.status_code and r.status_code == 200) and (r.text and r.text == r_text):
             return 'Success'
