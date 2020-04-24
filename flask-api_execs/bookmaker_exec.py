@@ -121,6 +121,8 @@ def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submittedfiles_dir, err_di
 # # # RUN
 if __name__ == '__main__':
     try:
+        # init logging
+        shared_cfg.startLogging(shared_cfg.logdir, shared_cfg.logfile, shared_cfg.this_script, shared_cfg.err_dict)
         # unzip file if it was a zip, right into the parentdir
         shared_cfg.unzipZips(shared_cfg.inputfile, shared_cfg.err_dict)
         # unlike the other two execs; here we want all files passed. Walking folder-tree (if present) three times:

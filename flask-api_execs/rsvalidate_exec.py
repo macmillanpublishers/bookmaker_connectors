@@ -12,6 +12,8 @@ product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "sectionstart_converter
 # # # RUN
 if __name__ == '__main__':
     try:
+        # init logging
+        shared_cfg.startLogging(shared_cfg.logdir, shared_cfg.logfile, shared_cfg.this_script, shared_cfg.err_dict)        
         # unzip file if it was a zip, right into the parentdir
         shared_cfg.unzipZips(shared_cfg.inputfile, shared_cfg.err_dict)
         # we're only looking for docx that were zipped solo here; so just checking for docx in
@@ -22,7 +24,7 @@ if __name__ == '__main__':
                 logging.debug('found docx: {}'.format(file))
                 popen_params = [shared_cfg.pypath, r'{}'.format(os.path.join(product_cmd)), file, shared_cfg.runtype_string, \
                     shared_cfg.user_email, shared_cfg.user_name]
-                logging.info("invoking {} for {}".format(productname, fname))                    
+                logging.info("invoking {} for {}".format(productname, fname))
                 output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
 
     except Exception as e:

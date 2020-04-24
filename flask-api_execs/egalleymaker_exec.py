@@ -12,6 +12,8 @@ product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_validator", 
 # # # RUN
 if __name__ == '__main__':
     try:
+        # init logging
+        shared_cfg.startLogging(shared_cfg.logdir, shared_cfg.logfile, shared_cfg.this_script, shared_cfg.err_dict)        
         # unzip file if it was a zip, right into the parentdir
         shared_cfg.unzipZips(shared_cfg.inputfile, shared_cfg.err_dict)
         # we're only looking for docx that were zipped solo here; so just checking for docx in

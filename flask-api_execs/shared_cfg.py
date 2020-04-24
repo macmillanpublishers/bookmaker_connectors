@@ -122,7 +122,11 @@ def invokeSubprocess(popen_params, product_name, err_dict):
         return False
 
 # # # setup logging
-# create log dir if it does not exist
-try_create_dir(logdir, err_dict)
-logging.basicConfig(filename=logfile, level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt='%Y-%m-%d %H:%M:%S')#DEBUG)
-logging.info("* * * * * * running '{}'".format(this_script))
+def startLogging(logdir, logfile, this_script, err_dict):
+    # create log dir if it does not exist
+    try_create_dir(logdir, err_dict)
+    try:
+        logging.basicConfig(filename=logfile, level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt='%Y-%m-%d %H:%M:%S')#DEBUG)
+        logging.info("* * * * * * running '{}'".format(this_script))
+    except Exception as e:
+        sendExceptionAlert(e, err_dict)
