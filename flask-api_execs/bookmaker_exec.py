@@ -169,6 +169,7 @@ if __name__ == '__main__':
                     shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name]
                 # invoke subprocess.popen
                 logging.info("invoking {} for {}".format(productname, newdocfilepath))
+                logging.debug("process params: {}".format(popen_params))
                 process_ok = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
                 # send 'bookmaker_begun' email to submitter
                 if process_ok == True:
