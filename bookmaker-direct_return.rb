@@ -144,8 +144,7 @@ api_metadata_hash = readJson(Bkmkr::Paths.api_Metadata_json, 'read_api_metadata_
 post_urls_hash = readJson(post_urls_json, 'read_camel_POSTurls_json')
 
 # get list of files to send from final_dir
-files_to_send_list = getFileList(sendfiles_regexp, "files_to_copy")
-@log_hash['files_to_send_list'] = files_to_send_list
+files_to_send_list = getFileList(sendfiles_regexp, "files_to_send")
 
 # different steps by runtype
 if Bkmkr::Project.runtype == 'direct'
@@ -154,7 +153,8 @@ if Bkmkr::Project.runtype == 'direct'
   # set destpath for url: project/tmpdir
   bookmaker_project = File.basename(File.dirname(Bkmkr::Paths.project_tmp_dir))
   this_tmpdir_name = File.basename(Bkmkr::Paths.project_tmp_dir)
-  post_url = getPOSTurl(post_url_productstring, post_urls_hash, Val::Paths.testing_value_file, bookmaker_project, this_tmpdir_name)
+  post_url = getPOSTurl(post_url_productstring, post_urls_hash, testing_value_file, bookmaker_project, this_tmpdir_name)
+  @log_hash['post_url'] = post_url
 
   # send files
   api_POST_results = sendFilesToDrive(files_to_send_list, api_POST_to_camel_py, post_url)
