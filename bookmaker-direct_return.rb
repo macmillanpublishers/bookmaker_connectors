@@ -49,7 +49,7 @@ def getPOSTurl(url_productstring, post_urls_hash, testing_value_file, bookmaker_
     post_url = post_urls_hash["#{url_productstring}_stg"]
   end
   # add bookmaker project name
-  post_url += bookmaker_project
+  post_url += "/#{bookmaker_project.downcase}"
   # add dest_folder
   post_url += "?folder=#{relative_destpath}"
   return post_url
