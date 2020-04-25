@@ -21,20 +21,19 @@ if __name__ == '__main__':
         #   parentdir (where zips where extracted to) should be fine (no need to recurse)
         for fname in os.listdir(shared_cfg.parentdir):
             if os.path.splitext(fname)[1] == '.docx':
-                file = os.path.join(shared_cfg.parentdir, fname)
+                # sanitize filename in case it was in a zip and has unfriendly chars
+                sanitized_fname = shared_cfg.sanitizeFilename(fname, shared_cfg.err_dict)
+                # define file with full path
+                file = os.path.join(shared_cfg.parentdir, sanitized_fname)
+                # make copy of file with sanitized name
+                if sanitized_fname != fname:
+                    shared_cfg.copyFile(os.path.join(shared_cfg.parentdir, fname), file, shared_cfg.err_dict)
                 logging.debug('found docx: {}'.format(file))
                 popen_params = [shared_cfg.rubypath, r'{}'.format(os.path.join(product_cmd)), file, shared_cfg.runtype_string, \
                     shared_cfg.user_email, shared_cfg.user_name]
-                logging.info("invoking {} for {}".format(productname, fname))
-                output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
+                logging.info("invoking {} for {}; parameters: {}".format(productname, sanitized_fname, popen_params))
+                # output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
 
     except Exception as e:
         logging.error("untrapped top-level exception occurred", exc_info=True)
         shared_cfg.sendExceptionAlert(e, shared_cfg.err_dict)
-
-    # from sys import argv
-    #
-    # count = 0
-    # for arg in argv:
-    # 	count += 1
-    # 	print("argv{}: {}".format(count, arg))

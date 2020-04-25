@@ -1,6 +1,7 @@
 import sys
 import os
 import imp
+import re
 import platform
 import zipfile
 from datetime import datetime
@@ -9,6 +10,7 @@ import subprocess
 from textwrap import dedent
 from socket import gethostname
 from getpass import getuser
+from shutil import copyfile
 import shared_cfg
 
 
@@ -104,6 +106,26 @@ def unzipZips(inputfile, err_dict):
         except Exception as e:
             logging.error('Error unzipping "{}"'.format(inputfile), exc_info=True)
             sendExceptionAlert(e, err_dict)
+
+def sanitizeFilename(fname, err_dict):
+    try:
+        basename, file_ext = os.path.splitext(fname)
+        sanitized_basename = re.sub(r'[^\w-]','',basename)
+        sanitized_fname = sanitized_basename + file_ext
+        logging.info("sanitized filename, from {} to {}".format(fname, sanitized_fname))
+        return sanitized_fname
+    except:
+        logging.error('Error sanitizing filename "{}"'.format(fname), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+        return fname
+
+def copyFile(src, dst, err_dict):
+    try:
+        copyfile(src, dst)
+    except:
+        logging.error('Error copying file "{}" to "{}"'.format(src, dst), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+        return fname
 
 # kickoff process via subprocess.popen
 def invokeSubprocess(popen_params, product_name, err_dict):

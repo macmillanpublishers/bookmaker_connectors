@@ -98,6 +98,7 @@ def checkSubmittedFiles(root_dir, err_dict):
         return word_docs, list(dupe_files)
 
 def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submittedfiles_dir, err_dict):
+    sanitized_docxname = ''
     try:
         for root, dirs, files in os.walk(root_dir):
             dirs[:] = [d for d in dirs if d not in ['__MACOSX']]
@@ -105,13 +106,20 @@ def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submittedfiles_dir, err_di
             for name in files:
                 fname_ext = os.path.splitext(name)[1]
                 currentfile = os.path.join(root, name)
-                movedfile = os.path.join(submittedfiles_dir, name)
+                # strip out whitespace and bad chars from docx basename as we move it
+                #   (these can sneak in in a zipped .docx)
+                if fname_ext == '.docx' or fname_ext == '.doc':
+                    dest_filename = shared_cfg.sanitizeFilename(name, err_dict)
+                    sanitized_docxname = dest_filename
+                else:
+                    dest_filename = name
+                movedfile = os.path.join(submittedfiles_dir, dest_filename)
                 # docx and config.json go in newtmpdir_root, everythign else goes in s-i dir
                 if fname_ext == '.docx' or fname_ext == '.doc' or name == 'config.json':
-                    movedfile = os.path.join(new_tmpdir, name)
+                    movedfile = os.path.join(new_tmpdir, dest_filename)
                 logging.debug("copying {} to {}".format(currentfile, movedfile))
                 shutil.move(currentfile, movedfile)
-        return True
+        return True, sanitized_docxname
     except Exception as e:
         logging.error('Error sending submitted files to bookmaker "{}"'.format(shared_cfg.inputfile), exc_info=True)
         shared_cfg.sendExceptionAlert(e, err_dict)
@@ -131,6 +139,7 @@ if __name__ == '__main__':
         #   Again to verify only one .doc(x) file and no files with the same names in different dirs
         #   And finally to pass unique files to a new tmpfolder for bookmaker
         word_docs, dupe_files = checkSubmittedFiles(shared_cfg.parentdir, shared_cfg.err_dict)
+
         # prepare notice for the wrong number of docx files
         if len(word_docs) != 1:
             alerttxts += "-- Bookmaker requires that exactly one Word .doc(x) be present in each file submission; however, "
@@ -150,21 +159,22 @@ if __name__ == '__main__':
             logging.info("sending mail to submitter re: previous warnings")
             shared_cfg.sendmail.sendMail([shared_cfg.user_email], alertmail_subject, \
                 alertmail_txt.format(uname=shared_cfg.user_name, infile_basename=infile_basename, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
+
         # we're ok! proceed with creating tmpdir for bookmaker and moving files there
         if not dupe_files and len(word_docs) == 1:
             # make dest tmpdir(s)
             new_tmpdir = os.path.join(bkmkr_tmpdir, shared_cfg.bkmkr_project, os.path.basename(shared_cfg.parentdir))
             submittedfiles_dir = os.path.join(new_tmpdir, 'submitted_files') # bookmaker sub-tmpdir for all non-docx files
-            # shared_cfg.try_create_dir(new_tmpdir, shared_cfg.err_dict)
             shared_cfg.try_create_dir(submittedfiles_dir, shared_cfg.err_dict)
-            filepass_ok = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, submittedfiles_dir, shared_cfg.err_dict)
+            # send files
+            filepass_ok, sanitized_docxname = passBookmakerSubmittedFiles(shared_cfg.parentdir, new_tmpdir, submittedfiles_dir, shared_cfg.err_dict)
             logging.debug("filepass_ok: {}".format(filepass_ok))
 
             # tempdir created, files moved, now kickoff bookmaker!
             if filepass_ok == True:
                 # set params
-                docx_basename = os.path.basename(word_docs[0])
-                newdocfilepath = os.path.join(new_tmpdir, docx_basename)
+                docx_basename = os.path.basename(word_docs[0])  # used for mailer instead of sanitized_docxname
+                newdocfilepath = os.path.join(new_tmpdir, sanitized_docxname)
                 popen_params = [r'{}'.format(os.path.join(product_cmd)), newdocfilepath, \
                     shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name]
                 # invoke subprocess.popen
