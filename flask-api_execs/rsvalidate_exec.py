@@ -32,7 +32,7 @@ if __name__ == '__main__':
                 popen_params = [shared_cfg.pypath, r'{}'.format(os.path.join(product_cmd)), file, shared_cfg.runtype_string, \
                     shared_cfg.user_email, shared_cfg.user_name]
                 logging.info("invoking {} for {}; parameters: {}".format(productname, sanitized_fname, popen_params))
-                # output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
+                output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
 
     except Exception as e:
         logging.error("untrapped top-level exception occurred", exc_info=True)
