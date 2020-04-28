@@ -4,6 +4,7 @@ import sys
 import logging
 import imp
 from datetime import datetime
+import time
 import dateutil.parser
 import pytz
 import ctypes
@@ -70,6 +71,7 @@ currentuser = getuser()
 staging_filename = 'staging.txt'
 staging_file = os.path.join("C:", os.sep, staging_filename)
 rs_to_bkmkr_name = 'rs_to_bkmkr'
+runtype = 'rsuite'
 bkmkr_toolchain_name = 'bookmaker_galley'
 dropfolder_maindir = os.path.join("G:", os.sep, "My Drive", "Workflow Tools")    #<< drive
 bkmkr_scripts_dir = os.path.join("S:", os.sep, "resources", "bookmaker_scripts")
@@ -202,18 +204,23 @@ def calc_init_quota(perjob_maxsize_KB, min_free_disk_KB):
 @decorators.debug_logging
 def setTmpDirName(bkmkr_tmp_dir, docx_name):
     project_tmp_dir_base = os.path.join(bkmkr_tmp_dir, docx_name.replace(' ',''))   # < remove whitespace from docxname
-    tmp_suffix_re = re.compile(".*_\d+$")
-    if tmp_suffix_re.match(project_tmp_dir_base):
-        # adding a hyphen as pre-suffix to filenames that happen to end in our std naming: '_\d'
-        projtmpdir_root = "{}-_".format(project_tmp_dir_base)
-    else:
-        projtmpdir_root = "{}_".format(project_tmp_dir_base)
-    count = 1
-    project_tmp_dir = "{}{}".format(projtmpdir_root,count)
-    # increment until we find an unused path/dir
-    while os.path.exists(project_tmp_dir):
-        count +=1
-        project_tmp_dir = "{}{}".format(projtmpdir_root,count)
+    project_tmp_dir = "{}_{}".format(project_tmp_dir_base, time.strftime("%y%m%d%H%M%S"))
+    ## ^ new way
+    ## we're now not trying to match tmpdirs, since we're removing the need for done-folders:
+    ##   so we don't need auto-increment and can just timestamp for unique directories
+    ## \/ old way
+    # tmp_suffix_re = re.compile(".*_\d+$")
+    # if tmp_suffix_re.match(project_tmp_dir_base):
+    #     # adding a hyphen as pre-suffix to filenames that happen to end in our std naming: '_\d'
+    #     projtmpdir_root = "{}-_".format(project_tmp_dir_base)
+    # else:
+    #     projtmpdir_root = "{}_".format(project_tmp_dir_base)
+    # count = 1
+    # project_tmp_dir = "{}{}".format(projtmpdir_root,count)
+    # # increment until we find an unused path/dir
+    # while os.path.exists(project_tmp_dir):
+    #     count +=1
+    #     project_tmp_dir = "{}{}".format(projtmpdir_root,count)
     return project_tmp_dir
 
 @decorators.debug_logging
@@ -264,7 +271,7 @@ def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir,
             docx_tmpdir_path = os.path.join(project_tmpdir)#, docx_object['name'])
             docx_convert_path = os.path.join(bkmkr_toolchain_dir, "convert", docx_object['name'])
             try:
-                popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, docx_tmpdir_path, servername_param]
+                popen_params = [r'{}'.format(os.path.join(bkmkr_cmd)), docx_convert_path, runtype, 'placeholder_param', servername_param]
                 logging.debug("popen params to launch bkmkr: \n'%s'" % popen_params)
                 p = subprocess.Popen(popen_params)
                 logging.info("bookmaker initiated for file '%s', pid %s" % (docx_object['name'], p.pid))

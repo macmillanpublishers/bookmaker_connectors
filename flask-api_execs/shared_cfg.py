@@ -1,6 +1,7 @@
 import sys
 import os
 import imp
+import re
 import platform
 import zipfile
 from datetime import datetime
@@ -9,6 +10,7 @@ import subprocess
 from textwrap import dedent
 from socket import gethostname
 from getpass import getuser
+from shutil import copyfile
 import shared_cfg
 
 
@@ -85,6 +87,7 @@ def sendExceptionAlert(errstring, err_dict):
 
 def try_create_dir(newpath, err_dict):
     try:
+        logging.debug("creating dir: {}".format(newpath))
         if not os.path.exists(newpath):
             os.makedirs(newpath)
     except Exception as e:
@@ -104,6 +107,26 @@ def unzipZips(inputfile, err_dict):
             logging.error('Error unzipping "{}"'.format(inputfile), exc_info=True)
             sendExceptionAlert(e, err_dict)
 
+def sanitizeFilename(fname, err_dict):
+    try:
+        basename, file_ext = os.path.splitext(fname)
+        sanitized_basename = re.sub(r'[^\w-]','',basename)
+        sanitized_fname = sanitized_basename + file_ext
+        logging.info("sanitized filename, from {} to {}".format(fname, sanitized_fname))
+        return sanitized_fname
+    except:
+        logging.error('Error sanitizing filename "{}"'.format(fname), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+        return fname
+
+def copyFile(src, dst, err_dict):
+    try:
+        copyfile(src, dst)
+    except:
+        logging.error('Error copying file "{}" to "{}"'.format(src, dst), exc_info=True)
+        sendExceptionAlert(e, err_dict)
+        return fname
+
 # kickoff process via subprocess.popen
 def invokeSubprocess(popen_params, product_name, err_dict):
     p = ''
@@ -112,14 +135,10 @@ def invokeSubprocess(popen_params, product_name, err_dict):
         p = subprocess.Popen(popen_params)
         logging.info("{} subprocess initiated, pid {}".format(product_name, p.pid))
         # logging.debug("popen output: {}".format(p)) < I don' think this works, b/c we are not piping stdout or anything
+        return True
     except Exception as e:
         logging.error("error invoking bkmkr subprocess; params: {}".format(popen_params), exc_info=True)
         if p:
             logging.info("(popen output: {})".format(p))
         sendExceptionAlert(e, err_dict)
-
-# # # setup logging
-# create log dir if it does not exist
-try_create_dir(logdir, err_dict)
-logging.basicConfig(filename=logfile, level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt='%Y-%m-%d %H:%M:%S')#DEBUG)
-logging.info("* * * * * * running '{}'".format(this_script))
+        return False
