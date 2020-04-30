@@ -53,9 +53,8 @@ if platform.system() != 'Windows':  # for testing:
 logdir = os.path.join(logdir_base, 'api-exec_logs')
 # \/ probably don't need to implement process_watch.py for this app; since it already sends alerts on error
 #process_watch_py = os.path.join(bkmkr_scripts_dir, "sectionstart_converter", "xml_docx_stylechecks", "shared_utils", "process_watch.py")
-if os.path.exists(staging_file):
-    # bkmkr_dir = '{}_stg'.format(bkmkr_dir)
-    logdir = '{}_stg'.format(logdir)
+# if os.path.exists(staging_file):  # < this is also not necessary since we are not collecting logs in one place (dropbox)
+#     logdir = '{}_stg'.format(logdir)
 logfile = os.path.join(logdir, "{}-{}.log".format(this_script.replace('.','_'), datetime.now().strftime("%y-%m")))
 
 # # # ERROR ALERTS info:
