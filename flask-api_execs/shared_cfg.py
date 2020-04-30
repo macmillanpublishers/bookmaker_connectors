@@ -28,6 +28,7 @@ bkmkr_project = sys.argv[exec_args.execArgs().index('bookmakerproject') + 2]
 parentdir = os.path.dirname(inputfile)
 jobId = os.path.basename(parentdir)
 file_ext = os.path.splitext(inputfile)[1]
+infile_name = os.path.basename(inputfile)
 
 # Other key definitions
 pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
@@ -39,17 +40,17 @@ currentuser = getuser()
 alert_emails_to = ['workflows@macmillan.com']
 staging_filename = 'staging.txt'
 staging_file = os.path.join("C:", os.sep, staging_filename)
-dropfolder_maindir = os.path.join("G:", os.sep, "My Drive", "Workflow Tools")    #<< drive
+logdir_base = os.path.join("S:", os.sep, 'flask-api')    #<< drive
 bkmkr_scripts_dir = os.path.join("S:", os.sep, 'resources', 'bookmaker_scripts')
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
     pypath = os.path.join(os.sep, 'usr', 'bin', 'python') # <- python 2.7 (system)
     rubypath = 'ruby'
     staging_file = os.path.join(os.sep,"Users", currentuser, staging_filename)
-    dropfolder_maindir = os.path.join(os.sep, "Volumes", "GoogleDrive", "My Drive", "Workflow Tools")     #<< drive
+    logdir_base = os.path.join(os.sep, 'Users', currentuser, 'testup')
     bkmkr_scripts_dir = os.path.join(os.sep,'Users', currentuser, 'bookmaker-dev')
 # conditional dependent paths
-logdir = os.path.join(dropfolder_maindir, "bookmaker_logs", "bookmaker_connectors", "api_execs")
+logdir = os.path.join(logdir_base, 'api-exec_logs')
 # \/ probably don't need to implement process_watch.py for this app; since it already sends alerts on error
 #process_watch_py = os.path.join(bkmkr_scripts_dir, "sectionstart_converter", "xml_docx_stylechecks", "shared_utils", "process_watch.py")
 if os.path.exists(staging_file):
@@ -75,6 +76,24 @@ err_dict = {
     "logfile": logfile,
     "this_script": this_script
 }
+
+# # # EMAIL TEMPLATE for exec file alerts:
+alertmail_subject = "{productname} update: a problem with your submitted files"
+alertmail_txt = dedent("""
+    Hello {uname},
+
+    {productname_cap} encountered the problem(s) listed below when attempting to process your submitted file(s):
+    (submitted file(s): {infile_basename})
+
+    {alerttxts}
+
+    Please resolve the above issues and resubmit to {productname}!
+
+    Or contact the workflows team at {to_mail} for further assistance:)
+    """)
+if os.path.isfile(staging_file):
+    alertmail_subject += '- {}'.format(server)
+    alertmail_txt += '\n\nSENT FROM BOOKMAKER STAGING (TESTING) SERVER'
 
 # # # FUNCTIONS
 def sendExceptionAlert(errstring, err_dict):
@@ -112,7 +131,8 @@ def sanitizeFilename(fname, err_dict):
         basename, file_ext = os.path.splitext(fname)
         sanitized_basename = re.sub(r'[^\w-]','',basename)
         sanitized_fname = sanitized_basename + file_ext
-        logging.info("sanitized filename, from {} to {}".format(fname, sanitized_fname))
+        if fname != sanitized_fname:
+            logging.info("sanitized filename, from {} to {}".format(fname, sanitized_fname))
         return sanitized_fname
     except:
         logging.error('Error sanitizing filename "{}"'.format(fname), exc_info=True)

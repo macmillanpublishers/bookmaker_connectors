@@ -9,31 +9,16 @@ from textwrap import dedent
 
 # # Local key definitions
 productname = 'bookmaker'
+productname_cap = productname[0].upper() + productname[1:]
 infile_basename = os.path.basename(shared_cfg.inputfile)
 product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "bookmaker_direct.bat")
 bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp"))
 if platform.system() != 'Windows':  # for testing:
     bkmkr_tmpdir = os.path.join(os.sep, 'Users', shared_cfg.currentuser, 'testup', 'bkmkr_tmp')
-
-
-# # # EMAIL TEMPLATES for bookmaker_Exec:
-# for Alerts
 alerttxts = ''
-alertmail_subject = "bookmaker update: a problem with your submitted files"
-alertmail_txt = dedent("""
-    Hello {uname},
 
-    Bookmaker encountered the problem(s) listed below when attempting to process your submitted file(s):
-    (submitted file(s): {infile_basename})
 
-    {alerttxts}
-
-    Please resolve the above issues and resubmit to bookmaker!
-
-    Or contact the workflows team at {to_mail} for further assistance:)
-    """)
-
-# for Success
+# # # EMAIL TEMPLATES for bookmaker_Exec Success:
 successmail_subject = "bookmaker processing begun for: '{docx_basename}'"
 zipfile_extratext = ''
 if shared_cfg.file_ext == '.zip':
@@ -46,11 +31,8 @@ successmail_txt = dedent("""
 
     If you don't receive a follow-up email from bookmaker within 20-25 minutes, please reach out to the workflows team for further assistance: {to_mail}.
     """)
-
 # addons for Staging server
 if os.path.isfile(shared_cfg.staging_file):
-    alertmail_subject += '- {}'.format(shared_cfg.server)
-    alertmail_txt += '\n\nSENT FROM BOOKMAKER STAGING (TESTING) SERVER'
     successmail_subject += '- {}'.format(shared_cfg.server)
     successmail_txt += '\n\nSENT FROM BOOKMAKER STAGING (TESTING) SERVER'
 
@@ -131,7 +113,7 @@ if __name__ == '__main__':
     try:
         # init logging
         logging.basicConfig(filename=shared_cfg.logfile, level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s", datefmt='%Y-%m-%d %H:%M:%S')#DEBUG)
-        logging.info("* * * * * * running '{}'".format(shared_cfg.this_script))
+        logging.info("* * * * * * running {} for file: '{}'".format(shared_cfg.this_script, shared_cfg.infile_name))
         # unzip file if it was a zip, right into the parentdir
         shared_cfg.unzipZips(shared_cfg.inputfile, shared_cfg.err_dict)
         # unlike the other two execs; here we want all files passed. Walking folder-tree (if present) three times:
@@ -154,11 +136,15 @@ if __name__ == '__main__':
             alertstr = "-- Some files with exact same name were found among submitted files. \nFiles: {}".format(dupe_files)
             alerttxts += "{}\n\n".format(alertstr)
             logging.warn(alertstr)
-        # send mail as needed
+        # prepare & send mail for any alerts
         if alerttxts:
             logging.info("sending mail to submitter re: previous warnings")
-            shared_cfg.sendmail.sendMail([shared_cfg.user_email], alertmail_subject, \
-                alertmail_txt.format(uname=shared_cfg.user_name, infile_basename=infile_basename, alerttxts=alerttxts, to_mail=shared_cfg.alert_emails_to[0]))
+            subject = shared_cfg.alertmail_subject.format(productname=productname)
+            mail_txt = shared_cfg.alertmail_txt.format(uname=shared_cfg.user_name, infile_basename=infile_basename, alerttxts=alerttxts, \
+            productname=productname, productname_cap=productname_cap, to_mail=shared_cfg.alert_emails_to[0])
+            # send mail
+            shared_cfg.sendmail.sendMail([shared_cfg.user_email], subject, mail_txt)
+
 
         # we're ok! proceed with creating tmpdir for bookmaker and moving files there
         if not dupe_files and len(word_docs) == 1:
