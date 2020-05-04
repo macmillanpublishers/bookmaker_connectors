@@ -11,7 +11,11 @@ from textwrap import dedent
 productname = 'bookmaker'
 productname_cap = productname[0].upper() + productname[1:]
 infile_basename = os.path.basename(shared_cfg.inputfile)
-product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "bookmaker_direct.bat")
+# get deploy.bat based on project name
+if shared_cfg.bkmkr_project.split('_').pop() == 'final':
+    product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "bookmaker_direct_final.bat")
+else:
+    product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "bookmaker_deploy", "bookmaker_direct.bat")
 bkmkr_tmpdir = os.path.join(os.path.join("S:", os.sep, "bookmaker_tmp"))
 if platform.system() != 'Windows':  # for testing:
     bkmkr_tmpdir = os.path.join(os.sep, 'Users', shared_cfg.currentuser, 'testup', 'bkmkr_tmp')
