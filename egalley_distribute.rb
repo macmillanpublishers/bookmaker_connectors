@@ -46,7 +46,7 @@ config_hash = readJson(Metadata.configfile, 'read_config_json')
 outputdir_hash = readJson(outputdirs_json, 'read_outputdirs_json')
 #local definition(s) based on config.json/doctemplatetype:
 doctemplatetype = config_hash['doctemplatetype']
-epub_outputdir = File.join(Bkmkr::Project.working_dir, outputdir_hash[doctemplatetype])
+epub_outputdir = File.join("S:", outputdir_hash[doctemplatetype])
 @log_hash['doctemplatetype_found'] = doctemplatetype
 @log_hash['epub_outputdir'] = epub_outputdir
 
