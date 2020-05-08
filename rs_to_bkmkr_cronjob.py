@@ -76,6 +76,7 @@ bkmkr_toolchain_name = 'bookmaker_galley'
 dropfolder_maindir = os.path.join("G:", os.sep, "My Drive", "Workflow Tools")    #<< drive
 bkmkr_scripts_dir = os.path.join("S:", os.sep, "resources", "bookmaker_scripts")
 bkmkr_tmp_dir = os.path.join("S:", os.sep, "bookmaker_tmp", bkmkr_toolchain_name)
+drive_api_key_json = os.path.join(bkmkr_scripts_dir, 'bookmaker_authkeys', 'drive-api_oauth2credentials_wfnotifications.json')
 
 # edits to above ^ for Mac OS / UNIX
 if platform.system() != 'Windows':  # for testing:
@@ -289,7 +290,7 @@ def processReadyDir(ready_dir): # other unlisted params, in scope: api_xfer_dir,
 
 #---------------------  MAIN
 try:
-    service = drive_api.getDriveServiceOauth2()
+    service = drive_api.getDriveServiceOauth2(drive_api_key_json)
 
     # get rsuite_to_bookmaker dir id
     maindir_id = drive_api.findDirByName(service, api_xfer_dir, 'root')
