@@ -59,6 +59,7 @@ def walkAndUnzip(root_dir, err_dict):
 def checkSubmittedFiles(root_dir, err_dict):
     walkAndUnzip(root_dir, err_dict)
     word_docs = []
+    html_docs = []
     all_docs = {}
     dupe_files = set()
     try:
@@ -70,6 +71,9 @@ def checkSubmittedFiles(root_dir, err_dict):
                 # capture all .doc or .docx files so we can count them
                 if os.path.splitext(name)[1] == '.docx' or os.path.splitext(name)[1] == '.doc':
                     word_docs.append(relative_name)
+                # check for htmldocs
+                if os.path.splitext(name)[1] == '.html':
+                    html_docs.append(relative_name)
                 # check if we've already captured a doc with this name
                 if name in all_docs.keys():
                     # track relative names of both dupes
@@ -77,6 +81,9 @@ def checkSubmittedFiles(root_dir, err_dict):
                     dupe_files.add(all_docs[name])
                 all_docs[name] = relative_name
                 # print(os.path.join(root, name))
+        # if thre are no word docs but there is an html file, we are probably intended to run that html file
+        if not word_docs and html_docs:
+            word_docs = html_docs
     except Exception as e:
         logging.error('Error checking bookmaker submitted files "{}"'.format(shared_cfg.inputfile), exc_info=True)
         shared_cfg.sendExceptionAlert(e, err_dict)
@@ -94,14 +101,14 @@ def passBookmakerSubmittedFiles(root_dir, new_tmpdir, submittedfiles_dir, err_di
                 currentfile = os.path.join(root, name)
                 # strip out whitespace and bad chars from docx basename as we move it
                 #   (these can sneak in in a zipped .docx)
-                if fname_ext == '.docx' or fname_ext == '.doc':
+                if fname_ext == '.docx' or fname_ext == '.doc' or fname_ext == '.html':
                     dest_filename = shared_cfg.sanitizeFilename(name, err_dict)
                     sanitized_docxname = dest_filename
                 else:
                     dest_filename = name
                 movedfile = os.path.join(submittedfiles_dir, dest_filename)
                 # docx and config.json go in newtmpdir_root, everythign else goes in s-i dir
-                if fname_ext == '.docx' or fname_ext == '.doc' or name == 'config.json':
+                if fname_ext == '.docx' or fname_ext == '.doc' or fname_ext == '.html' or name == 'config.json':
                     movedfile = os.path.join(new_tmpdir, dest_filename)
                 logging.debug("copying {} to {}".format(currentfile, movedfile))
                 shutil.move(currentfile, movedfile)
