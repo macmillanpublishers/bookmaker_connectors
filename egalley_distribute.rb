@@ -8,7 +8,8 @@ require_relative '../bookmaker/core/metadata.rb'
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
 outputdirs_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_connectors", "bookmakerbot_outputdirs.json")
-epubregexp = File.join(Metadata.final_dir, "*_EPUBfirstpass.epub")
+# this is not a true regex, globbing is not as nuanced. But this will achieve the same effect without rewriting the function.
+epubregexp = File.join(Metadata.final_dir, "97[8-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]_EPUBfirstpass.epub")
 epub_errfile = File.join(Metadata.final_dir, "EPUBCHECK_ERROR.txt")
 testing_value_file = File.join(Bkmkr::Paths.resource_dir, "staging.txt")
 
