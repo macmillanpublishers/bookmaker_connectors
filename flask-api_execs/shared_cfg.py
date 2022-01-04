@@ -31,9 +31,8 @@ file_ext = os.path.splitext(inputfile)[1]
 infile_name = os.path.basename(inputfile)
 
 # Other key definitions
-pypath = 'python'   # <- use default installed python from PATH, or ...
-# # ... use specified python binary from hardcoded path \/
-# pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
+# using specified python binary from hardcoded path \/, otherwise py3 from the calling venv is the default
+pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
 rubypath = 'ruby'   # <- use default installed ruby from PATH, or ...
 # # ... use specified ruby binary from hardcoded path \/
 # rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
