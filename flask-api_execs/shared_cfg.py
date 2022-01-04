@@ -31,8 +31,12 @@ file_ext = os.path.splitext(inputfile)[1]
 infile_name = os.path.basename(inputfile)
 
 # Other key definitions
-pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
-rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
+pypath = 'python'   # <- use default installed python from PATH
+# # \/ use specified python binary from hardcoded path
+# pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
+rubypath = 'ruby'   # <- use default installed ruby from PATH
+# # \/ use specified ruby binary from hardcoded path
+# rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
 this_script = os.path.basename(sys.argv[0])
 runtype_string = 'direct'
 server = gethostname()
