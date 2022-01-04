@@ -31,8 +31,11 @@ file_ext = os.path.splitext(inputfile)[1]
 infile_name = os.path.basename(inputfile)
 
 # Other key definitions
+# using specified python binary from hardcoded path \/, otherwise py3 from the calling venv is the default
 pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
-rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
+rubypath = 'ruby'   # <- use default installed ruby from PATH, or ...
+# # ... use specified ruby binary from hardcoded path \/
+# rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
 this_script = os.path.basename(sys.argv[0])
 runtype_string = 'direct'
 server = gethostname()
