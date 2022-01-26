@@ -7,8 +7,6 @@ require_relative '../bookmaker/core/metadata.rb'
 
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
-# my job is to pass json filepaths, proper spreadsheet id, and log success or error msg back to jsonlog
-# => mail can be sent here or via python (tbd)
 google_creds_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "drive-api_oauth2credentials_workflows.json")
 google_ids_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "drive_object_ids.json")
 gworksheet_basename = 'bm_log_worksheet'
