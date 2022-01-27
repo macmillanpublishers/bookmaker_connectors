@@ -91,12 +91,12 @@ sheetname = google_ids_json["#{gworksheet_basename}#{stg_suffix}"]["sheetname"]
 
 # run our function!
 #   use of \"s in args may not be strictly necessary but is safer with possible spaces in filepaths
-sheet_api_args = "\"#{json_log}\" \"#{userinfo_json}\" \"#{config_json}\" \"#{gworksheet_id}\" \"#{google_creds_json}\""
+sheet_api_args = "\"#{gworksheet_id}\" \"#{sheetname}\" \"#{userinfo_json}\" \"#{config_json}\" \"#{json_log}\" \"#{google_creds_json}\""
 sheet_api_results = localRunPython(bm_log_run_py, sheet_api_args, "sheets_api-log_run_to_gworksheet")
 # puts "sheet_api_results: ", sheet_api_results  #< debug
 @log_hash['sheet_api_results'] = sheet_api_results
 
-if api_result != 'success'
+if sheet_api_results.strip != 'success'
   # write the text of the mail to file, for pickup by python mailer.
   message_txtfile = writeFile(Bkmkr::Paths.project_tmp_dir, api_result, stg_suffix, stg_string, "write_emailtxt_to_file")
   # sendmail
