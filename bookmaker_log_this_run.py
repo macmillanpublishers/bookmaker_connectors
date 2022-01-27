@@ -91,13 +91,13 @@ def logToSheet(credentials_json, gworksheet_id, values_list, sheetname):
 def logThisRun(run_metadata_json, config_json, json_log, credentials_json, gworksheet_id, sheetname):
     # get values, headers, for post to sheet
     keys_list, values_list, result_string = setValuesForLog(run_metadata_json, config_json, json_log)
-    # post new values to sheet if set_Values function succeeded
-    if result_string == 'success':
-        # result_string equaled success to get here, now we re-set it for update-sheets_api call
-        result_string = logToSheet(credentials_json, gworksheet_id, values_list, sheetname)
-    # update headers for sheet
+    # update headers for sheet if set_Values function succeeded
     if result_string == 'success':
         # re-using result_string var again
         result_string = updateSheetHeaderRow(credentials_json, gworksheet_id, keys_list, sheetname)
+    # post new values to sheet if update headers succeeded
+    if result_string == 'success':
+        # result_string equaled success to get here, now we re-set it for update-sheets_api call
+        result_string = logToSheet(credentials_json, gworksheet_id, values_list, sheetname)
     # this value is output for ruby calling function.
     return result_string
