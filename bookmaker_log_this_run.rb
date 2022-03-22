@@ -7,32 +7,30 @@ require_relative '../bookmaker/core/metadata.rb'
 
 local_log_hash, @log_hash = Bkmkr::Paths.setLocalLoghash
 
-google_creds_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "drive-api_oauth2credentials_workflows.json")
-google_ids_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "drive_object_ids.json")
-gworksheet_basename = 'bm_log_worksheet'
+google_creds_json = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_authkeys", "gapps_api_info.json")
 json_log = Bkmkr::Paths.json_log
 userinfo_json = Bkmkr::Paths.api_Metadata_json
 config_json = Metadata.configfile
 bm_log_run_py = File.join(Bkmkr::Paths.scripts_dir, "bookmaker_connectors", "bookmaker_log_this_run.py")
 testing_value_file = File.join(Bkmkr::Paths.resource_dir, "staging.txt")
-stg_string = '_stg'
-sheet_api_results = ''
+api_success_str = 'api_success'
+api_results = ''
 sendmail_py = File.join(Bkmkr::Paths.scripts_dir, "utilities", "python_utils", "sendmail.py")
 workflows_email = 'workflows@macmillan.com'
 
 
 # ---------------------- METHODS
 
-def whichServer(testing_value_file, stg_string, logkey='')
+def whichServer(testing_value_file, logkey='')
   if File.file?(testing_value_file)
-    stg_string = stg_string
+    sname = 'staging'
   else
-    stg_string = ''
+    sname = 'production'
   end
-  return stg_string
+  return sname
 rescue => logstring
   puts 'error running "whichServer", defaulting to staging server'
-  return '_stg'
+  return 'staging'
 ensure
   Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
@@ -55,10 +53,10 @@ ensure
   Mcmlln::Tools.logtoJson(@log_hash, logkey, logstring)
 end
 
-def writeFile(tmpdir, apierr, whichserver, stg_string, logkey='')
+def writeFile(tmpdir, apierr, whichserver, logkey='')
   file = File.join(tmpdir, 'runlog_errmail.txt')
   bookmaker_run = File.basename(tmpdir)
-  if whichserver == stg_string
+  if whichserver == 'staging'
     server = "NYAUTOMATION_STG"
   else
     server = "NYAUTOMATION_01"
@@ -82,23 +80,20 @@ end
 
 # # ---------------------- MAIN
 
-# local definitions from json files
-google_ids_json = readJson(google_ids_json, 'read_google_ids_json')
-# get suffix based on which server we're on
-stg_suffix = whichServer(testing_value_file, stg_string, 'check_if_prod_or_stg_server')
-gworksheet_id = google_ids_json["#{gworksheet_basename}#{stg_suffix}"]["id"]
-sheetname = google_ids_json["#{gworksheet_basename}#{stg_suffix}"]["sheetname"]
+# get vars based on which server we're on
+which_server = whichServer(testing_value_file, 'check_if_prod_or_stg_server')
 
 # run our function!
 #   use of \"s in args may not be strictly necessary but is safer with possible spaces in filepaths
-sheet_api_args = "\"#{gworksheet_id}\" \"#{sheetname}\" \"#{userinfo_json}\" \"#{config_json}\" \"#{json_log}\" \"#{google_creds_json}\""
-sheet_api_results = localRunPython(bm_log_run_py, sheet_api_args, "sheets_api-log_run_to_gworksheet")
-# puts "sheet_api_results: ", sheet_api_results  #< debug
-@log_hash['sheet_api_results'] = sheet_api_results.strip
+sheet_api_args = "\"#{userinfo_json}\" \"#{config_json}\" \"#{json_log}\" \"#{google_creds_json}\" \"#{which_server}\" \"#{api_success_str}\""
+api_results = localRunPython(bm_log_run_py, sheet_api_args, "sheets_api-log_run_to_gworksheet")
+# puts "api_results: ", api_results  #< debug
+@log_hash['api_results'] = api_results.strip
 
-if sheet_api_results.strip != 'success'
+# send mail on api err result
+if !(api_results.strip.start_with?(api_success_str) && api_results.strip.include?('entry added'))
   # write the text of the mail to file, for pickup by python mailer.
-  message_txtfile = writeFile(Bkmkr::Paths.project_tmp_dir, sheet_api_results, stg_suffix, stg_string, "write_emailtxt_to_file")
+  message_txtfile = writeFile(Bkmkr::Paths.project_tmp_dir, api_results, which_server, "write_emailtxt_to_file")
   # sendmail
   errmail_args = "\"#{workflows_email}\" \"\" \"#{message_txtfile}\""
   errmail_results = localRunPython(sendmail_py, errmail_args, "invoke_sendmail-py")
