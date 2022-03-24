@@ -53,7 +53,7 @@ def setValuesForLog(run_metadata_json, config_json, json_log):
     config_dict = readJSON(config_json)
     json_dict = readJSON(json_log)
     # values_list = []
-    values_dict['date'] = time.strftime("%y%m%d-%H%M%S")
+    values_dict['date'] = time.strftime("%Y-%m-%d %H:%M")
     # get bookmaker folder
     if 'project' in config_dict and 'stage' in config_dict:
         values_dict['folder'] = '{}_{}'.format(config_dict['project'], config_dict['stage'])
