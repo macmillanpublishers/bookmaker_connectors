@@ -22,4 +22,4 @@ def apiPOST(file, url_POST):
 
 if __name__ == '__main__':
     resultstr = apiPOST(file, url_POST)
-    print resultstr
+    print (resultstr)
