@@ -42,6 +42,9 @@ if os.path.exists(local_cfg_json):
     try:
         with open(local_cfg_json) as json_data:
             d = json.load(json_data)
+    except ValueError as e:
+        logging.error('error with data from local_cfg.json:\n{}'.format(e))
+        d = {}
     except:
         d = {}
     if len(d) > 0 and 'python_path' in d and d['python_path'] != '':
