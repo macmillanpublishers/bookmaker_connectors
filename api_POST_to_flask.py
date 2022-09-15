@@ -7,15 +7,15 @@ from requests.auth import HTTPBasicAuth
 def apiPOST(file, url_POST, uname, pw, params):
     try:
         filename = os.path.basename(file)
-        fileobj = open(file,'rb')
-        r = requests.post(url_POST,
+        with open(file, 'rb') as f:
+            r = requests.post(url_POST,
             params=params,
-            files={"file": (filename, fileobj)},
-            auth=HTTPBasicAuth(uname, pw))
+            auth=HTTPBasicAuth(uname, pw),
+            files={'file': (filename, f)})
         if (r.status_code and r.status_code == 200):
             return 'Success'
         else:
-            return 'error: api response: "{}"'.format(r)
+            return 'error: api response: "{}"'.format(r.text)
 
     except Exception as e:
         return 'error: {}'.format(e)#
