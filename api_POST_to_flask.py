@@ -1,22 +1,47 @@
 import sys
 import os
 import requests
+from requests.packages.urllib3 import Retry
+from requests.adapters import HTTPAdapter
 from requests.auth import HTTPBasicAuth
+
+# retry implementation borrowed from: https://www.peterbe.com/plog/best-practice-with-retries-with-requests
+def requests_retry_session(
+    retries=3,
+    backoff_factor=0.5,
+    # status_forcelist=(500, 502, 504),
+    session=None,
+):
+    session = session or requests.Session()
+    retry = Retry(
+        total=retries,
+        read=retries,
+        connect=retries,
+        backoff_factor=backoff_factor,
+        # status_forcelist=status_forcelist,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    return session
 
 # send POST request with file
 def apiPOST(file, url_POST, uname, pw, params):
     try:
+        s = requests.Session()
         filename = os.path.basename(file)
         with open(file, 'rb') as f:
-            r = requests.post(url_POST,
-            params=params,
-            auth=HTTPBasicAuth(uname, pw),
-            files={'file': (filename, f)})
+            r = requests_retry_session(session=s).post(
+                url_POST,
+                params=params,
+                auth=HTTPBasicAuth(uname, pw),
+                files={'file': (filename, f)},
+                timeout=20
+                )
         if (r.status_code and r.status_code == 200):
             return 'Success'
         else:
             return 'error: api response: "{}"'.format(r.text)
-
     except Exception as e:
         return 'error: {}'.format(e)#
 
