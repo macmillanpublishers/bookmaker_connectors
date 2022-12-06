@@ -159,7 +159,7 @@ def invokeSubprocess(popen_params, product_name, err_dict):
         # logging.debug("popen output: {}".format(p)) < I don' think this works, b/c we are not piping stdout or anything
         return True
     except Exception as e:
-        logging.error("error invoking bkmkr subprocess; params: {}".format(popen_params), exc_info=True)
+        logging.error("error invoking {} subprocess; params: {}".format(product_name, popen_params), exc_info=True)
         if p:
             logging.info("(popen output: {})".format(p))
         sendExceptionAlert(e, err_dict)

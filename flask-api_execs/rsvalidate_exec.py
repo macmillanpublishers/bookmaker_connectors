@@ -7,7 +7,10 @@ import shared_cfg
 # # Local key definitions
 productname = 'rsuite_validate'
 productname_cap = productname[0].upper() + productname[1:]
-product_cmd = os.path.join(shared_cfg.bkmkr_scripts_dir, "sectionstart_converter", "xml_docx_stylechecks", "rsuitevalidate_main.py")
+# path to compose file:
+dcompose_path = os.path.join(shared_cfg.bkmkr_scripts_dir, "sectionstart_converter", "docker_rsv", "docker-compose.yml")
+# executable path in docker container:
+product_cmd = os.path.join(os.sep, "opt", "rsv", "xml_docx_stylechecks", "rsuitevalidate_main.py")
 
 
 # # # RUN
@@ -32,8 +35,8 @@ if __name__ == '__main__':
                 if sanitized_fname != fname:
                     shared_cfg.copyFile(os.path.join(shared_cfg.parentdir, fname), file, shared_cfg.err_dict)
                 logging.debug('found docx: {}'.format(file))
-                popen_params = [shared_cfg.pypath, r'{}'.format(os.path.join(product_cmd)), file, shared_cfg.runtype_string, \
-                    shared_cfg.user_email, shared_cfg.user_name]
+                popen_params = ['docker','compose','-f',dcompose_path,'run','--rm','rsv','python',r'{}'.format(os.path.join(product_cmd)), file, \
+                    shared_cfg.runtype_string, shared_cfg.user_email, shared_cfg.user_name]
                 logging.info("invoking {} for {}; parameters: {}".format(productname, sanitized_fname, popen_params))
                 output = shared_cfg.invokeSubprocess(popen_params, productname, shared_cfg.err_dict)
         # send mail if we didn't find any word docs
