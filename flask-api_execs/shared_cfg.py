@@ -2,6 +2,7 @@ import sys
 import os
 import imp
 import re
+import json
 import platform
 import zipfile
 from datetime import datetime
@@ -17,6 +18,7 @@ import shared_cfg
 # Define harcoded relative import paths from other repos
 utils_repo = os.path.join(sys.path[0], '..', '..', 'utilities')
 sendmail = imp.load_source('sendmail', os.path.join(utils_repo, 'python_utils','sendmail.py'))
+local_cfg_json = os.path.join(sys.path[0], 'local_cfg.json')
 
 # # # Define key vars and params from input
 inputfile = sys.argv[1]
@@ -31,9 +33,24 @@ file_ext = os.path.splitext(inputfile)[1]
 infile_name = os.path.basename(inputfile)
 
 # Other key definitions
-# using specified python binary from hardcoded path \/, otherwise py3 from the calling venv is the default
-pypath = os.path.join('C:', os.sep, 'Python27', 'python.exe')
+# using specified python binary, otherwise py3 from the calling venv is the default
+#    defaulting to whatever in system path, override with local config
+pypath = 'python'
+# same for ruby
 rubypath = 'ruby'   # <- use default installed ruby from PATH, or ...
+if os.path.exists(local_cfg_json):
+    try:
+        with open(local_cfg_json) as json_data:
+            d = json.load(json_data)
+    except ValueError as e:
+        logging.error('error with data from local_cfg.json:\n{}'.format(e))
+        d = {}
+    except:
+        d = {}
+    if len(d) > 0 and 'python_path' in d and d['python_path'] != '':
+        pypath = os.path.normpath(d['python_path'])
+    if len(d) > 0 and 'ruby_path' in d and d['ruby_path'] != '':
+        rubypath = os.path.normpath(d['ruby_path'])
 # # ... use specified ruby binary from hardcoded path \/
 # rubypath = os.path.join('C:', os.sep, 'Ruby200', 'bin', 'ruby.exe')
 this_script = os.path.basename(sys.argv[0])

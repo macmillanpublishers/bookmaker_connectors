@@ -3,3 +3,6 @@
 
 # OS generated files #
 .DS_Store
+
+# local config file for api_execs
+local_cfg.json
