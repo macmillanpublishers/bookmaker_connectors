@@ -16,15 +16,15 @@ import shared_cfg
 
 # Define harcoded relative import paths from other repos
 utils_repo = os.path.join(sys.path[0], '..', '..', 'utilities')
-exec_args = imp.load_source('exec_params', os.path.join(utils_repo, 'portable_flask-api', 'flaskr', 'exec_params.py'))
 sendmail = imp.load_source('sendmail', os.path.join(utils_repo, 'python_utils','sendmail.py'))
 
 # # # Define key vars and params from input
 inputfile = sys.argv[1]
-# the relative order of these passed params is determined in flaskr/exec_params.py
-user_email = sys.argv[exec_args.execArgs().index('emailAddress') + 2]
-user_name = sys.argv[exec_args.execArgs().index('displayname') + 2]
-bkmkr_project = sys.argv[exec_args.execArgs().index('bookmakerproject') + 2]
+# the relative order of these passed params is set in flask/instance/config.py
+user_name = sys.argv[2]
+user_email = sys.argv[3]
+if len(sys.argv)>4:
+    bkmkr_project = sys.argv[4]
 parentdir = os.path.dirname(inputfile)
 jobId = os.path.basename(parentdir)
 file_ext = os.path.splitext(inputfile)[1]
